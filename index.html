@@ -137,6 +137,7 @@ h1 {
 .flow-btn.active-light { background: rgba(255, 195, 205, 0.35); color: #c46070; border-color: #f0a0ad; }
 .flow-btn.active-medium { background: rgba(192, 72, 94, 0.15); color: #c0485e; border-color: #c0485e; }
 .flow-btn.active-heavy { background: rgba(160, 30, 55, 0.2); color: #9c2a42; border-color: #9c2a42; }
+.flow-btn.active-spotting { background: rgba(200, 160, 48, 0.15); color: #8a6010; border-color: #c8a030; }
 
 /* Action buttons */
 .btn {
@@ -333,6 +334,7 @@ h1 {
 .dot-light { background: #f5a8b4; }
 .dot-medium { background: #e05070; }
 .dot-heavy { background: #9c2a42; }
+.dot-spotting { background: #c8a030; }
 
 /* ========== STATS ========== */
 .stats-grid {
@@ -787,6 +789,7 @@ h1 {
           <label>Period Flow</label>
           <div class="flow-toggles">
             <button class="flow-btn active-none" data-flow="none" onclick="selectFlow(this)">None</button>
+            <button class="flow-btn" data-flow="spotting" onclick="selectFlow(this)">Spotting</button>
             <button class="flow-btn" data-flow="light" onclick="selectFlow(this)">Light</button>
             <button class="flow-btn" data-flow="medium" onclick="selectFlow(this)">Medium</button>
             <button class="flow-btn" data-flow="heavy" onclick="selectFlow(this)">Heavy</button>
@@ -990,6 +993,7 @@ h1 {
       <label>Flow</label>
       <select id="modalFlow">
         <option value="none">None</option>
+        <option value="spotting">Spotting</option>
         <option value="light">Light</option>
         <option value="medium">Medium</option>
         <option value="heavy">Heavy</option>
@@ -1126,7 +1130,8 @@ function detectCycles() {
 
   for (const dateStr of sortedDates) {
     const entry = data.entries[dateStr];
-    const hasPeriod = entry.flow && entry.flow !== 'none';
+    // Spotting does NOT count as period for cycle detection
+    const hasPeriod = entry.flow && entry.flow !== 'none' && entry.flow !== 'spotting';
 
     if (hasPeriod) {
       if (currentCycleStart === null || consecutiveNonPeriod >= 14) {
@@ -1166,7 +1171,7 @@ function getCyclePhase(dateStr) {
   const cd = getCycleDay(dateStr);
   if (cd === null) return null;
   const entry = data.entries[dateStr];
-  const hasPeriod = entry && entry.flow && entry.flow !== 'none';
+  const hasPeriod = entry && entry.flow && entry.flow !== 'none' && entry.flow !== 'spotting';
   if (hasPeriod || cd <= 5) return 'menstrual';
   if (cd <= 13) return 'follicular';
   if (cd <= 16) return 'ovulation';
@@ -1458,7 +1463,8 @@ function renderPeriodHistory() {
 // Find contiguous period ranges from entries
 function findPeriodRanges() {
   var sortedDates = Object.keys(data.entries).filter(function(d) {
-    return data.entries[d].flow && data.entries[d].flow !== 'none';
+    var f = data.entries[d].flow;
+    return f && f !== 'none' && f !== 'spotting'; // spotting is NOT period
   }).sort();
 
   if (sortedDates.length === 0) return [];
@@ -1538,7 +1544,8 @@ function renderFertilityBanner() {
   var cd = getCycleDay(today);
   var fertile = isFertileDay(today);
   var entry = data.entries[today];
-  var hasPeriod = entry && entry.flow && entry.flow !== 'none';
+  var hasPeriod = entry && entry.flow && entry.flow !== 'none' && entry.flow !== 'spotting';
+  var hasSpotting = entry && entry.flow === 'spotting';
 
   if (!cd && data.cycles.length === 0) return; // no data yet
 
@@ -1558,6 +1565,25 @@ function renderFertilityBanner() {
     icon.textContent = '\uD83C\uDF39'; // rose
     strong.textContent = 'Period Day' + (cd ? ' (Cycle Day ' + cd + ')' : '');
     detail.textContent = 'You are currently on your period. Track your temperature daily for best predictions.';
+  } else if (hasSpotting) {
+    // Spotting context depends on phase
+    var spottingPhase = phase || 'unknown';
+    if (spottingPhase === 'luteal' && cd >= 20) {
+      banner.classList.add('luteal');
+      icon.textContent = '\u2728';
+      strong.textContent = 'Spotting Detected (CD ' + cd + ' \u2014 Luteal Phase)';
+      detail.textContent = 'Spotting during the luteal phase (6\u201312 DPO) could be implantation bleeding \u2014 a possible early pregnancy sign. Monitor closely.';
+    } else if (spottingPhase === 'ovulation' || (cd >= 12 && cd <= 16)) {
+      banner.classList.add('fertile');
+      icon.textContent = '\uD83C\uDF3F';
+      strong.textContent = 'Spotting Detected (CD ' + cd + ' \u2014 Around Ovulation)';
+      detail.textContent = 'Mid-cycle spotting can be ovulation spotting \u2014 caused by the egg releasing. This is a good fertility sign!';
+    } else {
+      banner.classList.add('follicular');
+      icon.textContent = '\uD83D\uDCA7';
+      strong.textContent = 'Spotting Detected (CD ' + cd + ')';
+      detail.textContent = 'Light spotting noted. This is tracked separately from your period and won\'t affect cycle calculations.';
+    }
   } else if (fertile === 'ovulation') {
     banner.classList.add('fertile');
     icon.textContent = '\u2728'; // sparkles
@@ -1935,6 +1961,7 @@ function renderConceptionPlanner() {
     ['Coverline', 'Horizontal line on BBT chart separating pre-OV (lower) and post-OV (higher) temps'],
     ['Biphasic', 'Two-phase BBT pattern \u2014 lower temps before OV, higher after (confirms OV happened)'],
     ['Implantation', 'Embryo attaches to uterus \u2014 ~6\u201312 DPO, may cause light spotting or temp dip'],
+    ['Spotting', 'Very light bleeding outside of period \u2014 can signal ovulation (mid-cycle), implantation (6\u201312 DPO), or hormonal shifts. Tracked separately from period flow.'],
     ['Anovulatory', 'A cycle where no ovulation occurs \u2014 no BBT shift, no biphasic pattern'],
   ];
 
@@ -2042,7 +2069,7 @@ function generateBulkTable() {
     // Flow cell
     var td3 = document.createElement('td');
     var flowSelect = document.createElement('select');
-    ['none', 'light', 'medium', 'heavy'].forEach(function(val) {
+    ['none', 'spotting', 'light', 'medium', 'heavy'].forEach(function(val) {
       var opt = document.createElement('option');
       opt.value = val;
       opt.textContent = val.charAt(0).toUpperCase() + val.slice(1);
@@ -2108,6 +2135,7 @@ var PHASE_COLORS = {
 };
 
 var FLOW_BG = {
+  spotting: 'rgba(200, 160, 48, 0.18)',
   light: 'rgba(245, 168, 180, 0.25)',
   medium: 'rgba(192, 72, 94, 0.22)',
   heavy: 'rgba(156, 42, 66, 0.28)'
@@ -2187,7 +2215,7 @@ function renderChart() {
       pointStyles.push('circle');
     } else if (flow && flow !== 'none') {
       // Period day: red variants
-      var flowColors = { light: '#f5a8b4', medium: '#e05070', heavy: '#9c2a42' };
+      var flowColors = { spotting: '#c8a030', light: '#f5a8b4', medium: '#e05070', heavy: '#9c2a42' };
       pointBgColors.push(flowColors[flow] || '#e05070');
       pointBorderColors.push('#c0485e');
       pointRadii.push(5);
@@ -2448,7 +2476,7 @@ function renderChart() {
               if (td.fertile === 'ovulation') lines.push('\u2728 OVULATION DAY \u2014 Peak Fertility');
               else if (td.fertile === 'fertile') lines.push('\uD83C\uDF3F Fertile Window \u2014 BD Recommended');
               if (td.flow !== 'none') {
-                var flowLabels = { light: 'Light Flow', medium: 'Medium Flow', heavy: 'Heavy Flow' };
+                var flowLabels = { spotting: 'Spotting', light: 'Light Flow', medium: 'Medium Flow', heavy: 'Heavy Flow' };
                 lines.push('Period: ' + (flowLabels[td.flow] || td.flow));
               }
               if (td.notes) lines.push('Notes: ' + td.notes);
