@@ -139,11 +139,20 @@
       "temp": 96.8,
       "flow": "none",
       "notes": ""
+    },
+    "2026-03-24": {
+      "temp": null,
+      "flow": "medium",
+      "notes": ""
     }
   },
   "cycles": [
     {
       "startDate": "2026-02-24",
+      "endDate": "2026-03-23"
+    },
+    {
+      "startDate": "2026-03-24",
       "endDate": null
     }
   ]
