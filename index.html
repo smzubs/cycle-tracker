@@ -585,6 +585,30 @@ h1 {
   <h1>Cycle & BBT Tracker</h1>
   <p class="subtitle">Track your basal body temperature & menstrual cycle</p>
 
+  <!-- ====== CLOUD SYNC (top of page) ====== -->
+  <div class="card" id="syncCard">
+    <div class="card-title">Cloud Sync</div>
+    <div id="syncSetup">
+      <p style="font-size:0.85rem;color:#5a7a64;margin-bottom:12px">Enter a PIN to save & sync your data across devices. Use the same PIN on every device.</p>
+      <div class="entry-row">
+        <div class="field" style="flex:1;max-width:260px">
+          <label>Your PIN</label>
+          <input type="text" id="syncPin" placeholder="e.g. mypin2026" autocomplete="off" />
+        </div>
+        <button class="btn btn-primary" onclick="connectSync()" style="align-self:flex-end">Connect</button>
+      </div>
+    </div>
+    <div id="syncConnected" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span id="syncLabel" style="font-size:0.85rem;color:#2e5c3e;font-weight:600"></span>
+        <button class="btn btn-sm btn-secondary" onclick="cloudPull()">Pull from Cloud</button>
+        <button class="btn btn-sm btn-primary" onclick="cloudPush()">Push to Cloud</button>
+        <button class="btn btn-sm btn-danger" onclick="disconnectSync()">Disconnect</button>
+      </div>
+      <p style="font-size:0.75rem;color:#7aaa8a;margin-top:8px">Auto-syncs on every save. Tap "Pull" on a new device to load your data.</p>
+    </div>
+  </div>
+
   <!-- ====== DATA ENTRY ====== -->
   <div class="card">
     <div class="card-title">
@@ -715,31 +739,6 @@ h1 {
   <div class="card">
     <div class="card-title">Cycle Summary</div>
     <div class="stats-grid" id="statsGrid"></div>
-  </div>
-
-  <!-- ====== CLOUD SYNC ====== -->
-  <div class="card">
-    <div class="card-title">Cloud Sync</div>
-    <div id="syncStatus"></div>
-    <div id="syncSetup">
-      <p style="font-size:0.82rem;color:#5a7a64;margin-bottom:12px">Enter a PIN to sync data across devices. Use the same PIN on all your devices.</p>
-      <div class="entry-row">
-        <div class="field">
-          <label>Your PIN</label>
-          <input type="text" id="syncPin" placeholder="e.g. mypin2026" autocomplete="off" />
-        </div>
-        <button class="btn btn-primary" onclick="connectSync()" style="align-self:flex-end">Connect</button>
-      </div>
-    </div>
-    <div id="syncConnected" style="display:none">
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span id="syncLabel" style="font-size:0.85rem;color:#2e5c3e;font-weight:600"></span>
-        <button class="btn btn-sm btn-secondary" onclick="cloudPull()">Pull from Cloud</button>
-        <button class="btn btn-sm btn-primary" onclick="cloudPush()">Push to Cloud</button>
-        <button class="btn btn-sm btn-danger" onclick="disconnectSync()">Disconnect</button>
-      </div>
-      <p style="font-size:0.75rem;color:#7aaa8a;margin-top:8px">Data auto-syncs on every save. Pull to load from another device.</p>
-    </div>
   </div>
 
   <!-- ====== DATA MANAGEMENT ====== -->
