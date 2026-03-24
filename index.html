@@ -248,8 +248,11 @@ h1 {
 .chart-wrapper {
   position: relative;
   width: 100%;
-  height: 340px;
+  height: 420px;
   overflow-x: auto;
+  background: rgba(255,255,255,0.4);
+  border-radius: 14px;
+  padding: 8px 4px;
 }
 
 .chart-wrapper canvas { min-width: 600px; }
@@ -415,7 +418,7 @@ h1 {
   .entry-row { flex-direction: column; }
   .field { width: 100%; }
   .flow-toggles { flex-wrap: wrap; }
-  .chart-wrapper { height: 280px; }
+  .chart-wrapper { height: 320px; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .cal-cell { min-height: 56px; padding: 5px 2px; }
   .cal-temp { font-size: 0.62rem; }
@@ -2098,59 +2101,105 @@ function clearBulk() {
 
 // ---- Chart rendering ----
 var PHASE_COLORS = {
-  menstrual: 'rgba(192, 72, 94, 0.09)',
-  follicular: 'rgba(90, 180, 220, 0.09)',
-  ovulation: 'rgba(46, 139, 110, 0.1)',
-  luteal: 'rgba(176, 128, 32, 0.09)'
+  menstrual: 'rgba(192, 72, 94, 0.13)',
+  follicular: 'rgba(90, 180, 220, 0.12)',
+  ovulation: 'rgba(46, 180, 120, 0.14)',
+  luteal: 'rgba(200, 160, 48, 0.11)'
 };
 
 var FLOW_BG = {
-  light: 'rgba(245, 168, 180, 0.22)',
-  medium: 'rgba(192, 72, 94, 0.18)',
-  heavy: 'rgba(156, 42, 66, 0.22)'
+  light: 'rgba(245, 168, 180, 0.25)',
+  medium: 'rgba(192, 72, 94, 0.22)',
+  heavy: 'rgba(156, 42, 66, 0.28)'
 };
+
+var CHART_DAYS = 42; // wider view
 
 function renderChart() {
   var today = new Date();
-  var viewEnd = addDays(today, chartStartOffset + 17);
-  var viewStart = addDays(viewEnd, -34);
+  var viewEnd = addDays(today, chartStartOffset + 21);
+  var viewStart = addDays(viewEnd, -(CHART_DAYS - 1));
 
   document.getElementById('chartRange').textContent =
-    formatShort(viewStart) + ' \u2014 ' + formatShort(viewEnd);
+    formatShort(viewStart) + ' \u2014 ' + formatShort(viewEnd) + ' (' + CHART_DAYS + ' days)';
 
   var labels = [];
   var temps = [];
-  var pointColors = [];
+  var pointBgColors = [];
+  var pointBorderColors = [];
   var pointRadii = [];
+  var pointStyles = [];
   var tooltipData = [];
 
   var ovDay = detectOvulationDay();
   var coverline = computeCoverline();
+  var todayStr = formatDate(today);
 
-  for (var i = 0; i <= 34; i++) {
+  // Auto-scale Y axis based on actual data
+  var minTemp = 100, maxTemp = 96;
+
+  for (var i = 0; i < CHART_DAYS; i++) {
     var d = addDays(viewStart, i);
     var ds = formatDate(d);
-    labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+    // Show day of month + abbreviated month on 1st and 15th, otherwise just day
+    var dayNum = d.getDate();
+    var label = dayNum === 1 || dayNum === 15 || i === 0
+      ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      : String(dayNum);
+    labels.push(label);
 
     var entry = data.entries[ds];
     var temp = entry ? entry.temp : null;
     temps.push(temp);
 
-    var flow = entry ? entry.flow : 'none';
-
-    // Point styling
-    if (ds === ovDay) {
-      pointColors.push('#2e8b6e');
-      pointRadii.push(7);
-    } else if (flow && flow !== 'none') {
-      pointColors.push('#c0485e');
-      pointRadii.push(4);
-    } else {
-      pointColors.push('#3a9e74');
-      pointRadii.push(3);
+    if (temp) {
+      if (temp < minTemp) minTemp = temp;
+      if (temp > maxTemp) maxTemp = temp;
     }
 
+    var flow = entry ? entry.flow : 'none';
     var fertileStat = isFertileDay(ds);
+
+    // Rich point styling
+    if (ds === todayStr) {
+      // Today: bold ring
+      pointBgColors.push('#fff');
+      pointBorderColors.push('#2e5c3e');
+      pointRadii.push(6);
+      pointStyles.push('circle');
+    } else if (ds === ovDay) {
+      // BBT-confirmed ovulation: diamond
+      pointBgColors.push('#6b54cc');
+      pointBorderColors.push('#5a44aa');
+      pointRadii.push(8);
+      pointStyles.push('rectRot');
+    } else if (fertileStat === 'ovulation') {
+      // Predicted ovulation
+      pointBgColors.push('rgba(107,84,204,0.7)');
+      pointBorderColors.push('#6b54cc');
+      pointRadii.push(7);
+      pointStyles.push('rectRot');
+    } else if (fertileStat === 'fertile') {
+      // Fertile day
+      pointBgColors.push('rgba(46,180,120,0.8)');
+      pointBorderColors.push('#2e8b6e');
+      pointRadii.push(5);
+      pointStyles.push('circle');
+    } else if (flow && flow !== 'none') {
+      // Period day: red variants
+      var flowColors = { light: '#f5a8b4', medium: '#e05070', heavy: '#9c2a42' };
+      pointBgColors.push(flowColors[flow] || '#e05070');
+      pointBorderColors.push('#c0485e');
+      pointRadii.push(5);
+      pointStyles.push('circle');
+    } else {
+      // Normal day
+      pointBgColors.push('#3a9e74');
+      pointBorderColors.push('#2e8b6e');
+      pointRadii.push(3.5);
+      pointStyles.push('circle');
+    }
+
     tooltipData.push({
       date: ds,
       temp: temp,
@@ -2159,16 +2208,25 @@ function renderChart() {
       phase: getCyclePhase(ds),
       fertile: fertileStat,
       notes: entry ? entry.notes : '',
-      isOvulation: ds === ovDay
+      isOvulation: ds === ovDay,
+      isToday: ds === todayStr
     });
   }
 
-  // Build annotation boxes for phase/flow shading
+  // Smart Y-axis range
+  var yMin = Math.floor((minTemp - 0.3) * 5) / 5;
+  var yMax = Math.ceil((maxTemp + 0.3) * 5) / 5;
+  if (yMin < 95.5) yMin = 95.5;
+  if (yMax > 100.5) yMax = 100.5;
+  if (yMin >= yMax || !isFinite(yMin)) { yMin = 96.0; yMax = 99.5; }
+
+  // Build annotations
   var annotations = {};
+
+  // Phase/flow background bands
   var bandStart = null;
   var bandPhase = null;
-
-  for (var idx = 0; idx <= 34; idx++) {
+  for (var idx = 0; idx < CHART_DAYS; idx++) {
     var dd = addDays(viewStart, idx);
     var dds = formatDate(dd);
     var entryB = data.entries[dds];
@@ -2178,16 +2236,13 @@ function renderChart() {
 
     if (currentBand !== bandPhase) {
       if (bandStart !== null && bandPhase !== 'none') {
-        var color = bandPhase.startsWith('flow-')
+        var bColor = bandPhase.startsWith('flow-')
           ? FLOW_BG[bandPhase.replace('flow-', '')]
           : PHASE_COLORS[bandPhase];
-        if (color) {
+        if (bColor) {
           annotations['band' + bandStart] = {
-            type: 'box',
-            xMin: bandStart - 0.5,
-            xMax: idx - 0.5,
-            backgroundColor: color,
-            borderWidth: 0
+            type: 'box', xMin: bandStart - 0.5, xMax: idx - 0.5,
+            backgroundColor: bColor, borderWidth: 0, drawTime: 'beforeDatasetsDraw'
           };
         }
       }
@@ -2195,75 +2250,74 @@ function renderChart() {
       bandPhase = currentBand;
     }
   }
-  // Close last band
   if (bandStart !== null && bandPhase !== 'none') {
-    var lastColor = bandPhase.startsWith('flow-')
+    var lc = bandPhase.startsWith('flow-')
       ? FLOW_BG[bandPhase.replace('flow-', '')]
       : PHASE_COLORS[bandPhase];
-    if (lastColor) {
+    if (lc) {
       annotations['bandLast'] = {
-        type: 'box',
-        xMin: bandStart - 0.5,
-        xMax: 34.5,
-        backgroundColor: lastColor,
-        borderWidth: 0
+        type: 'box', xMin: bandStart - 0.5, xMax: CHART_DAYS - 0.5,
+        backgroundColor: lc, borderWidth: 0, drawTime: 'beforeDatasetsDraw'
       };
     }
   }
 
-  // Coverline annotation
-  if (coverline) {
-    annotations['coverline'] = {
-      type: 'line',
-      yMin: coverline,
-      yMax: coverline,
-      borderColor: 'rgba(192, 72, 94, 0.55)',
-      borderWidth: 1.5,
-      borderDash: [6, 4],
+  // Today vertical line
+  var todayIdx = -1;
+  for (var ti = 0; ti < CHART_DAYS; ti++) {
+    if (formatDate(addDays(viewStart, ti)) === todayStr) { todayIdx = ti; break; }
+  }
+  if (todayIdx >= 0) {
+    annotations['today'] = {
+      type: 'line', xMin: todayIdx, xMax: todayIdx,
+      borderColor: 'rgba(46,92,62,0.3)', borderWidth: 1.5, borderDash: [3, 3],
       label: {
-        display: true,
-        content: 'Coverline ' + coverline.toFixed(2) + '\u00B0F',
-        position: 'start',
-        backgroundColor: 'rgba(255, 255, 255, 0.88)',
-        color: '#c0485e',
-        font: { size: 10 }
+        display: true, content: 'Today', position: 'end',
+        backgroundColor: 'rgba(46,92,62,0.12)', color: '#2e5c3e',
+        font: { size: 9, weight: '600' }, padding: 4
       }
     };
   }
 
-  // Ovulation marker (from BBT shift detection)
+  // Coverline
+  if (coverline) {
+    annotations['coverline'] = {
+      type: 'line', yMin: coverline, yMax: coverline,
+      borderColor: 'rgba(192,72,94,0.45)', borderWidth: 1.5, borderDash: [8, 4],
+      label: {
+        display: true, content: 'Coverline ' + coverline.toFixed(2) + '\u00B0F',
+        position: 'start', backgroundColor: 'rgba(255,255,255,0.9)',
+        color: '#c0485e', font: { size: 10, weight: '600' }, padding: 5
+      }
+    };
+  }
+
+  // BBT-detected ovulation
   if (ovDay) {
     var ovIdx = -1;
-    for (var oi = 0; oi <= 34; oi++) {
+    for (var oi = 0; oi < CHART_DAYS; oi++) {
       if (formatDate(addDays(viewStart, oi)) === ovDay) { ovIdx = oi; break; }
     }
     if (ovIdx >= 0) {
       annotations['ovulation'] = {
-        type: 'line',
-        xMin: ovIdx,
-        xMax: ovIdx,
-        borderColor: 'rgba(46, 139, 110, 0.65)',
-        borderWidth: 2,
-        borderDash: [4, 3],
+        type: 'line', xMin: ovIdx, xMax: ovIdx,
+        borderColor: 'rgba(107,84,204,0.6)', borderWidth: 2.5, borderDash: [5, 3],
         label: {
-          display: true,
-          content: 'Ovulation (BBT)',
-          position: 'start',
-          backgroundColor: 'rgba(255, 255, 255, 0.88)',
-          color: '#2e8b6e',
-          font: { size: 10 }
+          display: true, content: 'Ovulation (confirmed by BBT)',
+          position: 'start', backgroundColor: 'rgba(107,84,204,0.12)',
+          color: '#5a44aa', font: { size: 10, weight: '700' }, padding: 5
         }
       };
     }
   }
 
-  // Fertile window bands on chart
+  // Fertile window bands
   for (var ci = 0; ci < data.cycles.length; ci++) {
     var fw = getFertileWindow(ci);
     if (!fw) continue;
 
     var fwStartIdx = -1, fwEndIdx = -1, fwOvIdx = -1;
-    for (var fi = 0; fi <= 34; fi++) {
+    for (var fi = 0; fi < CHART_DAYS; fi++) {
       var fds = formatDate(addDays(viewStart, fi));
       if (fds === fw.start && fwStartIdx === -1) fwStartIdx = fi;
       if (fds === fw.end) fwEndIdx = fi;
@@ -2272,40 +2326,26 @@ function renderChart() {
 
     if (fwStartIdx >= 0 && fwEndIdx >= 0) {
       annotations['fertile' + ci] = {
-        type: 'box',
-        xMin: fwStartIdx - 0.5,
-        xMax: fwEndIdx + 0.5,
-        backgroundColor: 'rgba(46, 180, 120, 0.08)',
-        borderColor: 'rgba(46, 180, 120, 0.25)',
-        borderWidth: 1,
-        borderDash: [4, 2],
+        type: 'box', xMin: fwStartIdx - 0.5, xMax: fwEndIdx + 0.5,
+        backgroundColor: 'rgba(46,180,120,0.07)',
+        borderColor: 'rgba(46,180,120,0.3)', borderWidth: 1.5, borderDash: [6, 3],
         label: {
-          display: true,
-          content: 'Fertile Window',
+          display: true, content: 'Fertile Window',
           position: { x: 'center', y: 'start' },
-          backgroundColor: 'rgba(255,255,255,0.85)',
-          color: '#2e8b6e',
-          font: { size: 9 }
+          backgroundColor: 'rgba(46,180,120,0.12)', color: '#1a6b48',
+          font: { size: 10, weight: '700' }, padding: 5
         }
       };
     }
 
-    // Ovulation marker from prediction (if no BBT-detected one)
     if (!ovDay && fwOvIdx >= 0) {
       annotations['ovPred' + ci] = {
-        type: 'line',
-        xMin: fwOvIdx,
-        xMax: fwOvIdx,
-        borderColor: 'rgba(46, 139, 110, 0.5)',
-        borderWidth: 2,
-        borderDash: [4, 3],
+        type: 'line', xMin: fwOvIdx, xMax: fwOvIdx,
+        borderColor: 'rgba(107,84,204,0.45)', borderWidth: 2, borderDash: [5, 3],
         label: {
-          display: true,
-          content: 'Ovulation (est.)',
-          position: 'start',
-          backgroundColor: 'rgba(255, 255, 255, 0.85)',
-          color: '#2e8b6e',
-          font: { size: 9 }
+          display: true, content: 'Ovulation (est.)',
+          position: 'start', backgroundColor: 'rgba(107,84,204,0.1)',
+          color: '#6b54cc', font: { size: 9, weight: '600' }, padding: 4
         }
       };
     }
@@ -2319,13 +2359,25 @@ function renderChart() {
         label: 'BBT (\u00B0F)',
         data: temps,
         borderColor: '#3a9e74',
-        backgroundColor: 'rgba(58, 158, 116, 0.08)',
-        borderWidth: 2,
-        pointBackgroundColor: pointColors,
+        backgroundColor: function(ctx) {
+          var chart = ctx.chart;
+          var area = chart.chartArea;
+          if (!area) return 'rgba(58,158,116,0.1)';
+          var gradient = chart.ctx.createLinearGradient(0, area.top, 0, area.bottom);
+          gradient.addColorStop(0, 'rgba(58,158,116,0.18)');
+          gradient.addColorStop(1, 'rgba(58,158,116,0.02)');
+          return gradient;
+        },
+        borderWidth: 2.5,
+        pointBackgroundColor: pointBgColors,
+        pointBorderColor: pointBorderColors,
+        pointBorderWidth: 2,
         pointRadius: pointRadii,
-        pointHoverRadius: 6,
-        tension: 0.3,
-        fill: false,
+        pointStyle: pointStyles,
+        pointHoverRadius: 8,
+        pointHoverBorderWidth: 3,
+        tension: 0.35,
+        fill: true,
         spanGaps: true
       }]
     },
@@ -2333,57 +2385,72 @@ function renderChart() {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
+      layout: { padding: { top: 10, right: 10, bottom: 5, left: 5 } },
       scales: {
         y: {
-          min: 96.0,
-          max: 100.0,
+          min: yMin,
+          max: yMax,
           ticks: {
             stepSize: 0.2,
             color: '#5a7a64',
-            font: { size: 11 },
-            callback: function(v) { return v.toFixed(1) + '\u00B0'; }
+            font: { size: 11, weight: '500' },
+            callback: function(v) { return v.toFixed(1) + '\u00B0F'; },
+            padding: 8
           },
-          grid: { color: 'rgba(74, 140, 100, 0.08)' }
+          grid: { color: 'rgba(74,140,100,0.08)', drawBorder: false },
+          border: { display: false }
         },
         x: {
           ticks: {
             color: '#5a7a64',
-            font: { size: 10 },
-            maxRotation: 45,
+            font: { size: 10, weight: '500' },
+            maxRotation: 0,
             autoSkip: true,
-            maxTicksLimit: 18
+            maxTicksLimit: 22,
+            padding: 6
           },
-          grid: { color: 'rgba(74, 140, 100, 0.06)' }
+          grid: { color: 'rgba(74,140,100,0.04)', drawBorder: false },
+          border: { display: false }
         }
       },
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: 'rgba(255, 255, 255, 0.97)',
+          backgroundColor: 'rgba(255,255,255,0.98)',
           titleColor: '#2e5c3e',
           bodyColor: '#3a5a44',
-          borderColor: 'rgba(58, 158, 116, 0.28)',
+          borderColor: 'rgba(58,158,116,0.3)',
           borderWidth: 1,
-          padding: 12,
+          padding: { top: 10, bottom: 10, left: 14, right: 14 },
+          cornerRadius: 12,
+          titleFont: { size: 13, weight: '700' },
+          bodyFont: { size: 12 },
+          boxPadding: 4,
           callbacks: {
             title: function(ctx) {
               var i = ctx[0].dataIndex;
               var td = tooltipData[i];
-              return td.date + (td.isOvulation ? '  (Est. Ovulation)' : '');
+              var title = td.date;
+              if (td.isToday) title += '  (Today)';
+              if (td.isOvulation) title += '  (Ovulation)';
+              return title;
             },
             label: function(ctx) {
               var i = ctx.dataIndex;
               var td = tooltipData[i];
               var lines = [];
-              if (td.temp) lines.push('Temp: ' + td.temp.toFixed(2) + '\u00B0F');
-              if (td.cycleDay) lines.push('Cycle Day: ' + td.cycleDay);
+              if (td.temp) lines.push('Temperature: ' + td.temp.toFixed(2) + '\u00B0F');
+              if (td.cycleDay) lines.push('Cycle Day: CD ' + td.cycleDay);
               if (td.phase) {
-                var phaseNames = { menstrual: 'Menstrual', follicular: 'Follicular', ovulation: 'Ovulation', luteal: 'Luteal' };
+                var phaseNames = { menstrual: 'Menstrual Phase', follicular: 'Follicular Phase', ovulation: 'Ovulation Phase', luteal: 'Luteal Phase' };
                 lines.push('Phase: ' + (phaseNames[td.phase] || td.phase));
               }
-              if (td.fertile === 'ovulation') lines.push('\u2728 OVULATION DAY');
-              else if (td.fertile === 'fertile') lines.push('\uD83C\uDF3F Fertile Window');
-              if (td.flow !== 'none') lines.push('Flow: ' + td.flow);
+              if (td.fertile === 'ovulation') lines.push('\u2728 OVULATION DAY \u2014 Peak Fertility');
+              else if (td.fertile === 'fertile') lines.push('\uD83C\uDF3F Fertile Window \u2014 BD Recommended');
+              if (td.flow !== 'none') {
+                var flowLabels = { light: 'Light Flow', medium: 'Medium Flow', heavy: 'Heavy Flow' };
+                lines.push('Period: ' + (flowLabels[td.flow] || td.flow));
+              }
               if (td.notes) lines.push('Notes: ' + td.notes);
               return lines;
             }
