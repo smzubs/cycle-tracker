@@ -686,17 +686,35 @@ h1 {
 
     <!-- Bulk import form -->
     <div id="bulkEntry" style="display:none">
+      <div class="entry-row" style="margin-bottom:14px">
+        <div class="field">
+          <label>Start Date</label>
+          <input type="date" id="bulkStartDate" />
+        </div>
+        <div class="field">
+          <label>Number of Days</label>
+          <select id="bulkDayCount" style="background:#f4fbf6;border:1.5px solid rgba(74,140,100,0.22);border-radius:10px;color:#1e2d24;padding:9px 13px;font-size:0.9rem;font-family:inherit;">
+            <option value="28">28 days</option>
+            <option value="60">60 days</option>
+            <option value="90" selected>90 days</option>
+            <option value="120">120 days</option>
+            <option value="180">180 days</option>
+          </select>
+        </div>
+        <button class="btn btn-secondary" onclick="generateBulkTable()" style="align-self:flex-end">Generate Table</button>
+      </div>
       <div style="overflow-x:auto">
         <table class="bulk-table" id="bulkTable">
           <thead>
-            <tr><th>Date</th><th>Temp (&deg;F)</th><th>Flow</th><th>Notes</th></tr>
+            <tr><th>#</th><th>Date</th><th>Temp (&deg;F)</th><th>Flow</th><th>Notes</th></tr>
           </thead>
           <tbody id="bulkBody"></tbody>
         </table>
       </div>
       <div class="bulk-actions">
-        <button class="btn btn-primary" onclick="saveBulk()">Save All</button>
+        <button class="btn-save-big" onclick="saveBulk()">Save All</button>
         <button class="btn btn-secondary" onclick="clearBulk()">Clear Form</button>
+        <span id="bulkCount" style="font-size:0.78rem;color:#7aaa8a"></span>
       </div>
     </div>
   </div>
@@ -1273,23 +1291,51 @@ function switchEntryTab(tab) {
   } else {
     document.getElementById('bulkEntry').style.display = '';
     document.querySelectorAll('.tab-btn')[2].classList.add('active');
-    populateBulkTable();
+    initBulkDefaults();
   }
 }
 
 // ---- Bulk import ----
-function populateBulkTable() {
+function initBulkDefaults() {
   var tbody = document.getElementById('bulkBody');
-  // Clear existing rows safely
+  // Only set defaults if table is empty
+  if (tbody.childNodes.length === 0) {
+    // Default: 90 days ending today
+    var today = new Date();
+    var start = addDays(today, -89);
+    document.getElementById('bulkStartDate').value = formatDate(start);
+    document.getElementById('bulkDayCount').value = '90';
+    generateBulkTable();
+  }
+}
+
+function generateBulkTable() {
+  var startStr = document.getElementById('bulkStartDate').value;
+  var dayCount = parseInt(document.getElementById('bulkDayCount').value) || 90;
+
+  if (!startStr) {
+    showToast('Please select a start date');
+    return;
+  }
+
+  var startDate = parseDate(startStr);
+  var tbody = document.getElementById('bulkBody');
   while (tbody.firstChild) { tbody.removeChild(tbody.firstChild); }
 
-  var today = new Date();
-  for (var i = 27; i >= 0; i--) {
-    var d = addDays(today, -i);
+  for (var i = 0; i < dayCount; i++) {
+    var d = addDays(startDate, i);
     var ds = formatDate(d);
     var existing = data.entries[ds];
 
     var tr = document.createElement('tr');
+
+    // Row number
+    var td0 = document.createElement('td');
+    td0.textContent = i + 1;
+    td0.style.color = '#7aaa8a';
+    td0.style.fontSize = '0.75rem';
+    td0.style.textAlign = 'center';
+    tr.appendChild(td0);
 
     // Date cell
     var td1 = document.createElement('td');
@@ -1338,6 +1384,8 @@ function populateBulkTable() {
 
     tbody.appendChild(tr);
   }
+
+  document.getElementById('bulkCount').textContent = dayCount + ' days from ' + formatShort(startDate);
 }
 
 function saveBulk() {
@@ -1366,7 +1414,9 @@ function saveBulk() {
 }
 
 function clearBulk() {
-  populateBulkTable();
+  var tbody = document.getElementById('bulkBody');
+  while (tbody.firstChild) { tbody.removeChild(tbody.firstChild); }
+  document.getElementById('bulkCount').textContent = '';
   showToast('Bulk form cleared');
 }
 
