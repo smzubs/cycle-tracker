@@ -1639,6 +1639,120 @@ function renderConceptionPlanner() {
   var nextPeriod = addDays(cycleStart, avgLen);
   var daysToNextPeriod = daysBetween(today, nextPeriod);
 
+  // --- Best Fertile Window Banner (top, full width, impossible to miss) ---
+  var fwBanner = document.createElement('div');
+  fwBanner.style.cssText = 'padding:20px;border-radius:16px;margin-bottom:16px;border:2px solid;';
+
+  var todayStr2 = formatDate(today);
+  var inFW = todayStr2 >= formatDate(fertileStartDate) && todayStr2 <= formatDate(fertileEndDate);
+  var fwPassed = todayStr2 > formatDate(fertileEndDate);
+  var fwComing = todayStr2 < formatDate(fertileStartDate);
+
+  if (inFW) {
+    fwBanner.style.background = 'rgba(46,180,120,0.1)';
+    fwBanner.style.borderColor = 'rgba(46,180,120,0.4)';
+  } else if (fwComing) {
+    fwBanner.style.background = 'rgba(107,84,204,0.06)';
+    fwBanner.style.borderColor = 'rgba(107,84,204,0.25)';
+  } else {
+    fwBanner.style.background = 'rgba(176,128,32,0.06)';
+    fwBanner.style.borderColor = 'rgba(176,128,32,0.2)';
+  }
+
+  var fwTitle = document.createElement('div');
+  fwTitle.style.cssText = 'font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;';
+  fwTitle.style.color = inFW ? '#1a6b48' : fwComing ? '#5a44aa' : '#8a6010';
+  fwTitle.textContent = inFW ? 'YOU ARE IN YOUR FERTILE WINDOW RIGHT NOW' : fwComing ? 'UPCOMING FERTILE WINDOW' : 'FERTILE WINDOW HAS PASSED THIS CYCLE';
+  fwBanner.appendChild(fwTitle);
+
+  // Fertile window date range
+  var fwRange = document.createElement('div');
+  fwRange.style.cssText = 'font-size:1.3rem;font-weight:700;color:#2e5c3e;margin-bottom:6px';
+  fwRange.textContent = formatShort(fertileStartDate) + ' \u2014 ' + formatShort(fertileEndDate);
+  fwBanner.appendChild(fwRange);
+
+  // Day-by-day breakdown with conception probability
+  var fwDays = [
+    { offset: -5, label: 'Low chance (~5%)', type: 'low' },
+    { offset: -4, label: 'Low-moderate (~10%)', type: 'low' },
+    { offset: -3, label: 'Moderate (~15%)', type: 'good' },
+    { offset: -2, label: 'HIGH (~25%)', type: 'best' },
+    { offset: -1, label: 'HIGHEST (~30%)', type: 'peak' },
+    { offset: 0, label: 'High (~20%) — Ovulation', type: 'best' },
+    { offset: 1, label: 'Low (~5%) — Egg fading', type: 'low' }
+  ];
+
+  var fwTable = document.createElement('div');
+  fwTable.style.cssText = 'margin-top:10px';
+
+  fwDays.forEach(function(fw) {
+    var dayDate = addDays(ovDate, fw.offset);
+    var dayStr = formatDate(dayDate);
+    var dayCD = daysBetween(cycleStart, dayDate) + 1;
+    var isToday = dayStr === formatDate(today);
+    var isPast = dayDate < today && !isToday;
+
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:10px;margin-bottom:3px;';
+
+    if (isToday) {
+      row.style.background = 'rgba(46,180,120,0.12)';
+      row.style.border = '1.5px solid rgba(46,180,120,0.35)';
+    } else if (isPast) {
+      row.style.opacity = '0.5';
+    }
+
+    // Probability bar
+    var barWrap = document.createElement('div');
+    barWrap.style.cssText = 'width:60px;height:8px;background:rgba(74,140,100,0.1);border-radius:4px;flex-shrink:0';
+    var bar = document.createElement('div');
+    var pcts = { low: '15%', good: '40%', best: '70%', peak: '100%' };
+    var colors = { low: '#7aaa8a', good: '#3a9e74', best: '#2e8b6e', peak: '#1a6b48' };
+    bar.style.cssText = 'height:100%;border-radius:4px;background:' + colors[fw.type] + ';width:' + pcts[fw.type];
+    barWrap.appendChild(bar);
+    row.appendChild(barWrap);
+
+    // Date
+    var dateSpan = document.createElement('span');
+    dateSpan.style.cssText = 'font-size:0.82rem;font-weight:700;color:#2e5c3e;min-width:85px';
+    dateSpan.textContent = formatShort(dayDate);
+    if (isToday) dateSpan.textContent += ' (today)';
+    row.appendChild(dateSpan);
+
+    // CD
+    var cdSpan = document.createElement('span');
+    cdSpan.style.cssText = 'font-size:0.75rem;color:#5a7a64;min-width:40px';
+    cdSpan.textContent = 'CD ' + dayCD;
+    row.appendChild(cdSpan);
+
+    // Label
+    var labelSpan = document.createElement('span');
+    labelSpan.style.cssText = 'font-size:0.78rem;font-weight:' + (fw.type === 'best' || fw.type === 'peak' ? '700' : '500');
+    labelSpan.style.color = fw.type === 'peak' ? '#1a6b48' : fw.type === 'best' ? '#2e8b6e' : '#5a7a64';
+    labelSpan.textContent = fw.label;
+    row.appendChild(labelSpan);
+
+    // BD recommendation
+    if (fw.type === 'best' || fw.type === 'peak') {
+      var bdTag = document.createElement('span');
+      bdTag.style.cssText = 'font-size:0.65rem;font-weight:700;background:rgba(46,180,120,0.15);color:#1a6b48;padding:2px 8px;border-radius:6px;margin-left:auto';
+      bdTag.textContent = 'BD recommended';
+      row.appendChild(bdTag);
+    }
+
+    fwTable.appendChild(row);
+  });
+
+  fwBanner.appendChild(fwTable);
+
+  // Tip
+  var tip = document.createElement('div');
+  tip.style.cssText = 'font-size:0.78rem;color:#5a7a64;margin-top:12px;padding:10px 12px;background:rgba(255,255,255,0.6);border-radius:10px;line-height:1.5';
+  tip.textContent = 'Tip: For best conception chances, have intercourse (BD) every 1\u20132 days during the fertile window, especially OV\u22122 and OV\u22121. Sperm can survive up to 5 days, but the egg only lasts 12\u201324 hours after ovulation.';
+  fwBanner.appendChild(tip);
+
+  container.appendChild(fwBanner);
+
   // --- Build the grid ---
   var grid = document.createElement('div');
   grid.className = 'conception-grid';
