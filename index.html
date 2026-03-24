@@ -2131,8 +2131,7 @@ function clearAllData() {
   showToast('All data cleared');
 }
 
-// ---- Cloud Sync (JSONBin.io) ----
-var JSONBIN_API = 'https://api.jsonbin.io/v3';
+// ---- Cloud Sync (npoint.io — free, no API key) ----
 var SYNC_PIN_KEY = 'cycleTrackerSyncPin';
 var SYNC_BIN_KEY = 'cycleTrackerBinId';
 
@@ -2161,50 +2160,91 @@ function connectSync() {
     return;
   }
 
-  // Use PIN as the bin name to look up existing bin
   showToast('Connecting...');
 
-  // First, try to find existing bin by searching with the PIN as name
-  // We'll use a deterministic approach: create/find bin with PIN hash as name
-  var binName = 'cycle-tracker-' + simpleHash(pin);
-
-  // Check if we already have a bin stored for this PIN
-  var storedMapping = localStorage.getItem('syncMap_' + simpleHash(pin));
-  if (storedMapping) {
+  // Check if we have a saved bin ID for this PIN
+  var savedBin = localStorage.getItem('syncMap_' + pin);
+  if (savedBin) {
+    // Reconnect to existing bin
     localStorage.setItem(SYNC_PIN_KEY, pin);
-    localStorage.setItem(SYNC_BIN_KEY, storedMapping);
+    localStorage.setItem(SYNC_BIN_KEY, savedBin);
     initSync();
     cloudPull();
     return;
   }
 
-  // Create a new bin
+  // Create a new bin on npoint.io
   var xhr = new XMLHttpRequest();
-  xhr.open('POST', JSONBIN_API + '/b', true);
+  xhr.open('POST', 'https://api.npoint.io', true);
   xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.setRequestHeader('X-Bin-Name', binName);
-  xhr.setRequestHeader('X-Bin-Private', 'false');
   xhr.onreadystatechange = function() {
     if (xhr.readyState === 4) {
       if (xhr.status === 200 || xhr.status === 201) {
         try {
           var resp = JSON.parse(xhr.responseText);
-          var binId = resp.metadata.id;
-          localStorage.setItem(SYNC_PIN_KEY, pin);
-          localStorage.setItem(SYNC_BIN_KEY, binId);
-          localStorage.setItem('syncMap_' + simpleHash(pin), binId);
-          initSync();
-          cloudPush();
-          showToast('Connected! Data synced to cloud.');
+          // npoint returns the full URL, extract the ID
+          var binUrl = resp.api_url || '';
+          var binId = binUrl.split('/').pop() || resp.id;
+          if (!binId) {
+            // Try alternate response format
+            binId = xhr.getResponseHeader('Location');
+            if (binId) binId = binId.split('/').pop();
+          }
+          if (binId) {
+            localStorage.setItem(SYNC_PIN_KEY, pin);
+            localStorage.setItem(SYNC_BIN_KEY, binId);
+            localStorage.setItem('syncMap_' + pin, binId);
+            initSync();
+            showToast('Connected! Data saved to cloud.');
+          } else {
+            showToast('Connection failed. Try again.');
+          }
         } catch (e) {
           showToast('Connection failed. Try again.');
         }
       } else {
-        showToast('Connection failed (' + xhr.status + '). Try again.');
+        // Fallback: use jsonblob.com
+        connectViaJsonBlob(pin);
       }
     }
   };
-  xhr.send(JSON.stringify({ entries: data.entries, pin: simpleHash(pin), updated: new Date().toISOString() }));
+  xhr.send(JSON.stringify({ entries: data.entries, updated: new Date().toISOString() }));
+}
+
+// Fallback sync using jsonblob.com
+function connectViaJsonBlob(pin) {
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', 'https://jsonblob.com/api/jsonBlob', true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.setRequestHeader('Accept', 'application/json');
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4) {
+      if (xhr.status === 200 || xhr.status === 201) {
+        // jsonblob returns the blob URL in the Location header
+        var location = xhr.getResponseHeader('Location') || '';
+        var binId = location.split('/').pop();
+        if (binId) {
+          localStorage.setItem(SYNC_PIN_KEY, pin);
+          localStorage.setItem(SYNC_BIN_KEY, 'jb:' + binId);
+          localStorage.setItem('syncMap_' + pin, 'jb:' + binId);
+          initSync();
+          showToast('Connected! Data saved to cloud.');
+        } else {
+          showToast('Connection failed. Check your internet.');
+        }
+      } else {
+        showToast('Connection failed (' + xhr.status + '). Check internet.');
+      }
+    }
+  };
+  xhr.send(JSON.stringify({ entries: data.entries, updated: new Date().toISOString() }));
+}
+
+function getApiUrl(binId) {
+  if (binId.startsWith('jb:')) {
+    return 'https://jsonblob.com/api/jsonBlob/' + binId.substring(3);
+  }
+  return 'https://api.npoint.io/' + binId;
 }
 
 function cloudPush(silent) {
@@ -2212,36 +2252,37 @@ function cloudPush(silent) {
   if (!binId) return;
 
   var xhr = new XMLHttpRequest();
-  xhr.open('PUT', JSONBIN_API + '/b/' + binId, true);
+  var url = getApiUrl(binId);
+  xhr.open('PUT', url, true);
   xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.setRequestHeader('X-Bin-Versioning', 'false');
+  xhr.setRequestHeader('Accept', 'application/json');
   xhr.onreadystatechange = function() {
     if (xhr.readyState === 4) {
       if (xhr.status === 200) {
-        if (!silent) showToast('Data pushed to cloud');
+        if (!silent) showToast('Data saved to cloud');
       } else if (!silent) {
-        showToast('Push failed (' + xhr.status + ')');
+        showToast('Save failed (' + xhr.status + ')');
       }
     }
   };
-  xhr.send(JSON.stringify({ entries: data.entries, pin: simpleHash(getSyncPin()), updated: new Date().toISOString() }));
+  xhr.send(JSON.stringify({ entries: data.entries, updated: new Date().toISOString() }));
 }
 
 function cloudPull() {
   var binId = getSyncBinId();
   if (!binId) { showToast('Not connected'); return; }
 
-  showToast('Pulling data...');
+  showToast('Loading data...');
   var xhr = new XMLHttpRequest();
-  xhr.open('GET', JSONBIN_API + '/b/' + binId + '/latest', true);
+  var url = getApiUrl(binId);
+  xhr.open('GET', url, true);
+  xhr.setRequestHeader('Accept', 'application/json');
   xhr.onreadystatechange = function() {
     if (xhr.readyState === 4) {
       if (xhr.status === 200) {
         try {
-          var resp = JSON.parse(xhr.responseText);
-          var cloudData = resp.record;
+          var cloudData = JSON.parse(xhr.responseText);
           if (cloudData && cloudData.entries) {
-            // Merge: cloud entries overwrite local for same dates
             Object.keys(cloudData.entries).forEach(function(key) {
               data.entries[key] = cloudData.entries[key];
             });
@@ -2249,15 +2290,15 @@ function cloudPull() {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
             renderPeriodHistory();
             renderAll();
-            showToast('Data pulled from cloud (' + Object.keys(cloudData.entries).length + ' entries)');
+            showToast('Loaded ' + Object.keys(cloudData.entries).length + ' entries from cloud');
           } else {
-            showToast('No data found in cloud');
+            showToast('No data found in cloud yet');
           }
         } catch (e) {
           showToast('Failed to parse cloud data');
         }
       } else {
-        showToast('Pull failed (' + xhr.status + ')');
+        showToast('Load failed (' + xhr.status + ')');
       }
     }
   };
@@ -2266,22 +2307,10 @@ function cloudPull() {
 
 function disconnectSync() {
   localStorage.removeItem(SYNC_PIN_KEY);
-  // Keep bin ID mapping so reconnecting with same PIN finds same bin
   document.getElementById('syncSetup').style.display = '';
   document.getElementById('syncConnected').style.display = 'none';
   document.getElementById('syncPin').value = '';
   showToast('Disconnected from cloud');
-}
-
-// Simple hash to create deterministic bin name from PIN
-function simpleHash(str) {
-  var hash = 0;
-  for (var i = 0; i < str.length; i++) {
-    var char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  return Math.abs(hash).toString(36);
 }
 
 // ---- Toast notifications ----
