@@ -815,11 +815,16 @@ function init() {
 
   renderPeriodHistory();
   renderAll();
+  loadFromServer();
 }
 
 
-// ---- Data persistence ----
+// ---- Data persistence (local server + localStorage fallback) ----
+var API_BASE = window.location.origin;
+var useServer = window.location.hostname !== 'smzubs.github.io' && window.location.protocol !== 'file:';
+
 function loadData() {
+  // Load from localStorage first (instant)
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
@@ -830,9 +835,37 @@ function loadData() {
   return { entries: {}, cycles: [] };
 }
 
+function loadFromServer() {
+  if (!useServer) return;
+  fetch(API_BASE + '/api/data')
+    .then(function(r) { return r.json(); })
+    .then(function(serverData) {
+      if (serverData && serverData.entries && Object.keys(serverData.entries).length > 0) {
+        // Merge server data into local
+        Object.keys(serverData.entries).forEach(function(key) {
+          data.entries[key] = serverData.entries[key];
+        });
+        detectCycles();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        renderPeriodHistory();
+        renderAll();
+      }
+    })
+    .catch(function() { /* server not available, use localStorage */ });
+}
+
 function saveData() {
   detectCycles();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+  // Also save to server if available
+  if (useServer) {
+    fetch(API_BASE + '/api/data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).catch(function() { /* silent fail, localStorage has it */ });
+  }
 }
 
 // ---- Date helpers ----
