@@ -563,6 +563,18 @@ h1 {
   font-size: 0.9rem;
   margin-bottom: 2px;
 }
+
+/* ========== SYNC ========== */
+#syncConnected {
+  padding: 12px 0 4px;
+}
+
+#syncLabel {
+  background: rgba(58, 158, 116, 0.1);
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+}
 </style>
 </head>
 <body>
@@ -705,6 +717,31 @@ h1 {
     <div class="stats-grid" id="statsGrid"></div>
   </div>
 
+  <!-- ====== CLOUD SYNC ====== -->
+  <div class="card">
+    <div class="card-title">Cloud Sync</div>
+    <div id="syncStatus"></div>
+    <div id="syncSetup">
+      <p style="font-size:0.82rem;color:#5a7a64;margin-bottom:12px">Enter a PIN to sync data across devices. Use the same PIN on all your devices.</p>
+      <div class="entry-row">
+        <div class="field">
+          <label>Your PIN</label>
+          <input type="text" id="syncPin" placeholder="e.g. mypin2026" autocomplete="off" />
+        </div>
+        <button class="btn btn-primary" onclick="connectSync()" style="align-self:flex-end">Connect</button>
+      </div>
+    </div>
+    <div id="syncConnected" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span id="syncLabel" style="font-size:0.85rem;color:#2e5c3e;font-weight:600"></span>
+        <button class="btn btn-sm btn-secondary" onclick="cloudPull()">Pull from Cloud</button>
+        <button class="btn btn-sm btn-primary" onclick="cloudPush()">Push to Cloud</button>
+        <button class="btn btn-sm btn-danger" onclick="disconnectSync()">Disconnect</button>
+      </div>
+      <p style="font-size:0.75rem;color:#7aaa8a;margin-top:8px">Data auto-syncs on every save. Pull to load from another device.</p>
+    </div>
+  </div>
+
   <!-- ====== DATA MANAGEMENT ====== -->
   <div class="card">
     <div class="card-title">Data Management</div>
@@ -774,6 +811,7 @@ function init() {
   document.getElementById('entryDate').value = formatDate(today);
   calYear = today.getFullYear();
   calMonth = today.getMonth();
+  initSync();
   renderPeriodHistory();
   renderAll();
 }
@@ -793,6 +831,10 @@ function loadData() {
 function saveData() {
   detectCycles();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  // Auto-push to cloud if connected
+  if (getSyncPin()) {
+    cloudPush(true); // silent push
+  }
 }
 
 // ---- Date helpers ----
@@ -1929,6 +1971,159 @@ function clearAllData() {
   saveData();
   renderAll();
   showToast('All data cleared');
+}
+
+// ---- Cloud Sync (JSONBin.io) ----
+var JSONBIN_API = 'https://api.jsonbin.io/v3';
+var SYNC_PIN_KEY = 'cycleTrackerSyncPin';
+var SYNC_BIN_KEY = 'cycleTrackerBinId';
+
+function getSyncPin() {
+  return localStorage.getItem(SYNC_PIN_KEY);
+}
+
+function getSyncBinId() {
+  return localStorage.getItem(SYNC_BIN_KEY);
+}
+
+function initSync() {
+  var pin = getSyncPin();
+  var binId = getSyncBinId();
+  if (pin && binId) {
+    document.getElementById('syncSetup').style.display = 'none';
+    document.getElementById('syncConnected').style.display = '';
+    document.getElementById('syncLabel').textContent = 'Connected (PIN: ' + pin.substring(0, 3) + '...)';
+  }
+}
+
+function connectSync() {
+  var pin = document.getElementById('syncPin').value.trim();
+  if (!pin || pin.length < 4) {
+    showToast('PIN must be at least 4 characters');
+    return;
+  }
+
+  // Use PIN as the bin name to look up existing bin
+  showToast('Connecting...');
+
+  // First, try to find existing bin by searching with the PIN as name
+  // We'll use a deterministic approach: create/find bin with PIN hash as name
+  var binName = 'cycle-tracker-' + simpleHash(pin);
+
+  // Check if we already have a bin stored for this PIN
+  var storedMapping = localStorage.getItem('syncMap_' + simpleHash(pin));
+  if (storedMapping) {
+    localStorage.setItem(SYNC_PIN_KEY, pin);
+    localStorage.setItem(SYNC_BIN_KEY, storedMapping);
+    initSync();
+    cloudPull();
+    return;
+  }
+
+  // Create a new bin
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', JSONBIN_API + '/b', true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.setRequestHeader('X-Bin-Name', binName);
+  xhr.setRequestHeader('X-Bin-Private', 'false');
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4) {
+      if (xhr.status === 200 || xhr.status === 201) {
+        try {
+          var resp = JSON.parse(xhr.responseText);
+          var binId = resp.metadata.id;
+          localStorage.setItem(SYNC_PIN_KEY, pin);
+          localStorage.setItem(SYNC_BIN_KEY, binId);
+          localStorage.setItem('syncMap_' + simpleHash(pin), binId);
+          initSync();
+          cloudPush();
+          showToast('Connected! Data synced to cloud.');
+        } catch (e) {
+          showToast('Connection failed. Try again.');
+        }
+      } else {
+        showToast('Connection failed (' + xhr.status + '). Try again.');
+      }
+    }
+  };
+  xhr.send(JSON.stringify({ entries: data.entries, pin: simpleHash(pin), updated: new Date().toISOString() }));
+}
+
+function cloudPush(silent) {
+  var binId = getSyncBinId();
+  if (!binId) return;
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('PUT', JSONBIN_API + '/b/' + binId, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.setRequestHeader('X-Bin-Versioning', 'false');
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4) {
+      if (xhr.status === 200) {
+        if (!silent) showToast('Data pushed to cloud');
+      } else if (!silent) {
+        showToast('Push failed (' + xhr.status + ')');
+      }
+    }
+  };
+  xhr.send(JSON.stringify({ entries: data.entries, pin: simpleHash(getSyncPin()), updated: new Date().toISOString() }));
+}
+
+function cloudPull() {
+  var binId = getSyncBinId();
+  if (!binId) { showToast('Not connected'); return; }
+
+  showToast('Pulling data...');
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', JSONBIN_API + '/b/' + binId + '/latest', true);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4) {
+      if (xhr.status === 200) {
+        try {
+          var resp = JSON.parse(xhr.responseText);
+          var cloudData = resp.record;
+          if (cloudData && cloudData.entries) {
+            // Merge: cloud entries overwrite local for same dates
+            Object.keys(cloudData.entries).forEach(function(key) {
+              data.entries[key] = cloudData.entries[key];
+            });
+            detectCycles();
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            renderPeriodHistory();
+            renderAll();
+            showToast('Data pulled from cloud (' + Object.keys(cloudData.entries).length + ' entries)');
+          } else {
+            showToast('No data found in cloud');
+          }
+        } catch (e) {
+          showToast('Failed to parse cloud data');
+        }
+      } else {
+        showToast('Pull failed (' + xhr.status + ')');
+      }
+    }
+  };
+  xhr.send();
+}
+
+function disconnectSync() {
+  localStorage.removeItem(SYNC_PIN_KEY);
+  // Keep bin ID mapping so reconnecting with same PIN finds same bin
+  document.getElementById('syncSetup').style.display = '';
+  document.getElementById('syncConnected').style.display = 'none';
+  document.getElementById('syncPin').value = '';
+  showToast('Disconnected from cloud');
+}
+
+// Simple hash to create deterministic bin name from PIN
+function simpleHash(str) {
+  var hash = 0;
+  for (var i = 0; i < str.length; i++) {
+    var char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(36);
 }
 
 // ---- Toast notifications ----
