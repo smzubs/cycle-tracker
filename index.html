@@ -465,29 +465,47 @@ h1 {
   text-transform: uppercase;
   letter-spacing: 0.6px;
   margin-bottom: 8px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(74, 140, 100, 0.12);
 }
 
 .period-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 10px 14px;
   background: rgba(244, 251, 246, 0.8);
-  border-radius: 10px;
-  margin-bottom: 6px;
+  border-radius: 12px;
+  margin-bottom: 8px;
   border: 1px solid rgba(74, 140, 100, 0.1);
+  gap: 10px;
+}
+
+.period-item-left {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
 }
 
 .period-item-dates {
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   font-weight: 600;
   color: #2e5c3e;
 }
 
+.period-item-meta {
+  font-size: 0.73rem;
+  color: #7aaa8a;
+  font-weight: 500;
+}
+
 .period-item-days {
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   color: #c0485e;
-  font-weight: 600;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .period-item-remove {
@@ -495,14 +513,136 @@ h1 {
   border: none;
   color: #c0485e;
   cursor: pointer;
-  font-size: 0.8rem;
-  padding: 2px 6px;
-  border-radius: 6px;
+  font-size: 0.78rem;
+  padding: 4px 8px;
+  border-radius: 8px;
   font-family: inherit;
+  font-weight: 500;
+  flex-shrink: 0;
 }
 
 .period-item-remove:hover {
   background: rgba(192, 72, 94, 0.1);
+}
+
+/* ========== PERIOD FORM ========== */
+.period-field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 14px;
+}
+
+.period-ongoing-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(192, 72, 94, 0.06);
+  border: 1.5px solid rgba(192, 72, 94, 0.18);
+  border-radius: 14px;
+  cursor: pointer;
+  margin-bottom: 14px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.period-ongoing-check:hover {
+  background: rgba(192, 72, 94, 0.1);
+  border-color: rgba(192, 72, 94, 0.3);
+}
+
+.period-ongoing-check input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #c0485e;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.period-ongoing-label-title {
+  font-weight: 700;
+  color: #9c2a42;
+  font-size: 0.9rem;
+  margin-bottom: 3px;
+}
+
+.period-ongoing-label-sub {
+  font-size: 0.75rem;
+  color: #c0485e;
+  line-height: 1.4;
+}
+
+.period-save-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Ongoing banner */
+.ongoing-banner {
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: rgba(192, 72, 94, 0.08);
+  border: 2px solid rgba(192, 72, 94, 0.25);
+  margin-bottom: 18px;
+}
+
+.ongoing-banner-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.ongoing-banner-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.ongoing-banner-title {
+  font-weight: 700;
+  color: #9c2a42;
+  font-size: 1.05rem;
+  margin-bottom: 2px;
+}
+
+.ongoing-banner-sub {
+  font-size: 0.82rem;
+  color: #c0485e;
+}
+
+.ongoing-banner-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-bottom: 12px;
+}
+
+.ongoing-banner-hint {
+  font-size: 0.75rem;
+  color: #9aaa9a;
+  line-height: 1.4;
+}
+
+.ongoing-banner-link {
+  background: none;
+  border: none;
+  color: #5a7a64;
+  font-size: 0.78rem;
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: underline;
+  padding: 0;
+  margin-top: 8px;
+  display: block;
+}
+
+.ongoing-banner-link:hover {
+  color: #2e5c3e;
 }
 
 /* ========== FERTILE INDICATOR (Calendar) ========== */
@@ -716,6 +856,26 @@ h1 {
   font-weight: 700;
 }
 
+/* ========== FIELD SELECT (shared style for selects outside .field) ========== */
+.field-select {
+  background: #f4fbf6;
+  border: 1.5px solid rgba(74, 140, 100, 0.22);
+  border-radius: 10px;
+  color: #1e2d24;
+  padding: 9px 13px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 3px rgba(40, 90, 60, 0.05) inset;
+  width: 100%;
+}
+
+.field-select:focus {
+  border-color: #3a9e74;
+  box-shadow: 0 0 0 3px rgba(58, 158, 116, 0.12);
+}
+
 /* ========== BIG SAVE BUTTON ========== */
 .save-row {
   margin-top: 14px;
@@ -809,78 +969,70 @@ h1 {
     <div id="periodEntry">
 
       <!-- Ongoing Period Banner (shows when period is active) -->
-      <div id="ongoingBanner" style="display:none;padding:18px 20px;border-radius:16px;background:rgba(192,72,94,0.1);border:2px solid rgba(192,72,94,0.3);margin-bottom:18px">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-          <span style="font-size:1.4rem">🩸</span>
+      <div id="ongoingBanner" class="ongoing-banner" style="display:none">
+        <div class="ongoing-banner-header">
+          <div class="ongoing-banner-icon">🩸</div>
           <div>
-            <div style="font-weight:700;color:#9c2a42;font-size:1rem" id="ongoingText"></div>
-            <div style="font-size:0.82rem;color:#c0485e;margin-top:2px" id="ongoingDays"></div>
+            <div class="ongoing-banner-title" id="ongoingText"></div>
+            <div class="ongoing-banner-sub" id="ongoingDays"></div>
           </div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="ongoing-banner-actions">
           <div class="field" style="flex:1;min-width:150px">
             <label>Today's Flow</label>
-            <select id="ongoingFlowUpdate" style="background:#f4fbf6;border:1.5px solid rgba(74,140,100,0.22);border-radius:10px;color:#1e2d24;padding:9px 13px;font-size:0.9rem;font-family:inherit;">
+            <select id="ongoingFlowUpdate" class="field-select">
               <option value="heavy">Heavy</option>
               <option value="medium" selected>Medium</option>
               <option value="light">Light</option>
               <option value="spotting">Spotting</option>
             </select>
           </div>
-          <button class="btn-save-big coral" onclick="updateOngoing()" style="align-self:flex-end">Mark Today</button>
-          <button class="btn btn-danger" onclick="endOngoing()" style="align-self:flex-end">Period Ended</button>
+          <button class="btn-save-big coral" onclick="updateOngoing()">Log Today</button>
+          <button class="btn btn-danger" onclick="endOngoing()">Period Ended</button>
         </div>
-        <div style="font-size:0.78rem;color:#7aaa8a">Tap "Mark Today" each day to log flow. Tap "Period Ended" when it stops.</div>
-        <button class="btn btn-sm btn-secondary" onclick="forceShowPeriodForm()" style="margin-top:8px">Log a different period</button>
+        <div class="ongoing-banner-hint">Tap "Log Today" each day to record your flow. Tap "Period Ended" when it stops.</div>
+        <button class="ongoing-banner-link" onclick="forceShowPeriodForm()">Log a past period instead</button>
       </div>
 
       <!-- Period entry form -->
       <div id="periodForm">
-        <div class="entry-row">
+        <div class="period-field-row">
           <div class="field">
-            <label>Period Start Date</label>
+            <label>Start Date</label>
             <input type="date" id="periodStart" />
           </div>
           <div class="field" id="periodEndField">
-            <label>Period End Date</label>
+            <label>End Date</label>
             <input type="date" id="periodEnd" />
           </div>
           <div class="field">
-            <label>Flow Intensity</label>
-            <select id="periodFlow" style="background:#f4fbf6;border:1.5px solid rgba(74,140,100,0.22);border-radius:10px;color:#1e2d24;padding:9px 13px;font-size:0.9rem;font-family:inherit;">
-              <option value="medium">Medium (default)</option>
+            <label>Flow</label>
+            <select id="periodFlow" class="field-select">
+              <option value="none">None (spotting only)</option>
+              <option value="spotting">Spotting</option>
               <option value="light">Light</option>
+              <option value="medium" selected>Medium</option>
               <option value="heavy">Heavy</option>
             </select>
           </div>
         </div>
 
-        <!-- Ongoing checkbox + Spotting day option -->
-        <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 14px;background:rgba(192,72,94,0.06);border:1px solid rgba(192,72,94,0.15);border-radius:12px">
-            <input type="checkbox" id="periodOngoingCheck" onchange="toggleOngoing()" style="width:20px;height:20px;accent-color:#c0485e;cursor:pointer" />
-            <div>
-              <div style="font-weight:700;color:#9c2a42;font-size:0.88rem">Period is still ongoing</div>
-              <div style="font-size:0.75rem;color:#c0485e">Check this if your period hasn't ended yet. End date will be set to today and you can update daily.</div>
-            </div>
-          </label>
+        <!-- Still ongoing checkbox -->
+        <label class="period-ongoing-check">
+          <input type="checkbox" id="periodOngoingCheck" onchange="toggleOngoing()" />
+          <div>
+            <div class="period-ongoing-label-title">Still on my period</div>
+            <div class="period-ongoing-label-sub">Check this if your period hasn't ended yet — hides the End Date field. You can log each day from the status card.</div>
+          </div>
+        </label>
 
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 14px;background:rgba(200,160,48,0.06);border:1px solid rgba(200,160,48,0.15);border-radius:12px">
-            <input type="checkbox" id="spottingDayCheck" style="width:20px;height:20px;accent-color:#c8a030;cursor:pointer" />
-            <div>
-              <div style="font-weight:700;color:#8a6010;font-size:0.88rem">Log spotting day (not a period)</div>
-              <div style="font-size:0.75rem;color:#b08020">Light bleeding/spotting that shouldn't count as period. Could be ovulation or implantation spotting.</div>
-            </div>
-          </label>
-        </div>
-
-        <div style="margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <div class="period-save-row">
           <button class="btn-save-big coral" onclick="savePeriodOrSpotting()">Save</button>
         </div>
       </div>
 
       <!-- Period History -->
-      <div id="periodHistory" style="margin-top:20px"></div>
+      <div id="periodHistory"></div>
     </div>
 
     <!-- Bulk import form -->
@@ -1032,15 +1184,21 @@ let editingDate = null;
 
 // ---- Initialization ----
 function init() {
-  const today = new Date();
-  document.getElementById('entryDate').value = formatDate(today);
-  document.getElementById('periodStart').value = formatDate(today);
-  document.getElementById('periodEnd').value = formatDate(today);
+  var today = new Date();
+  var todayStr = formatDate(today);
+  document.getElementById('entryDate').value = todayStr;
+  document.getElementById('periodStart').value = todayStr;
+  document.getElementById('periodEnd').value = todayStr;
   calYear = today.getFullYear();
   calMonth = today.getMonth();
 
-  renderPeriodHistory();
+  // Show period tab by default
+  document.getElementById('periodEntry').style.display = '';
+  document.getElementById('singleEntry').style.display = 'none';
+  document.getElementById('bulkEntry').style.display = 'none';
+
   checkOngoing();
+  renderPeriodHistory();
   renderAll();
   loadFromServer();
 }
@@ -1067,15 +1225,27 @@ function loadFromServer() {
   fetch(API_BASE + '/api/data')
     .then(function(r) { return r.json(); })
     .then(function(serverData) {
-      if (serverData && serverData.entries && Object.keys(serverData.entries).length > 0) {
-        // Merge server data into local
+      if (!serverData) return;
+      // Server is authoritative — use it if it has data, or if local is also empty
+      var serverEntryCount = serverData.entries ? Object.keys(serverData.entries).length : 0;
+      var localEntryCount = Object.keys(data.entries).length;
+
+      if (serverEntryCount > 0) {
+        // Server has data — merge it in (server wins for same keys)
         Object.keys(serverData.entries).forEach(function(key) {
           data.entries[key] = serverData.entries[key];
         });
+        if (serverData.cycles && serverData.cycles.length > 0) {
+          data.cycles = serverData.cycles;
+        }
         detectCycles();
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         renderPeriodHistory();
+        checkOngoing();
         renderAll();
+      } else if (serverEntryCount === 0 && localEntryCount > 0) {
+        // Server was cleared — push local data to server to keep in sync
+        // (Don't overwrite local with empty server data)
       }
     })
     .catch(function() { /* server not available, use localStorage */ });
@@ -1253,40 +1423,49 @@ function saveEntry() {
 
 // ---- Save period / spotting ----
 function savePeriodOrSpotting() {
-  var isSpotting = document.getElementById('spottingDayCheck').checked;
   var isOngoing = document.getElementById('periodOngoingCheck').checked;
   var startStr = document.getElementById('periodStart').value;
   var flow = document.getElementById('periodFlow').value;
 
   if (!startStr) { showToast('Please select a start date'); return; }
 
-  if (isSpotting) {
-    // Log spotting for the selected date only
-    if (!data.entries[startStr]) {
-      data.entries[startStr] = { temp: null, flow: 'spotting', notes: 'spotting' };
-    } else {
-      data.entries[startStr].flow = 'spotting';
-      if (!data.entries[startStr].notes) data.entries[startStr].notes = 'spotting';
+  // Spotting-only: just log that one day, no cycle impact
+  if (flow === 'spotting' || flow === 'none') {
+    var endStr2 = isOngoing ? '' : document.getElementById('periodEnd').value;
+    var dateToLog = endStr2 || startStr;
+    // If spotting or none, log the start date (or range if end date given)
+    var logStart = parseDate(startStr);
+    var logEnd = (endStr2 && !isOngoing) ? parseDate(endStr2) : logStart;
+    var logDays = daysBetween(logStart, logEnd) + 1;
+    if (logDays < 1) logDays = 1;
+    if (logDays > 15) { showToast('Date range too long (max 15 days)'); return; }
+    for (var si = 0; si < logDays; si++) {
+      var sd = addDays(logStart, si);
+      var sds = formatDate(sd);
+      if (!data.entries[sds]) {
+        data.entries[sds] = { temp: null, flow: flow, notes: flow === 'spotting' ? 'spotting' : '' };
+      } else {
+        data.entries[sds].flow = flow;
+        if (flow === 'spotting' && !data.entries[sds].notes) data.entries[sds].notes = 'spotting';
+      }
     }
     saveData();
     renderAll();
     renderPeriodHistory();
-    showToast('Spotting logged for ' + startStr);
-    document.getElementById('periodStart').value = '';
-    document.getElementById('spottingDayCheck').checked = false;
+    showToast(flow === 'spotting' ? 'Spotting logged' : 'Entry saved');
+    resetPeriodForm();
     return;
   }
 
   if (isOngoing) {
-    // Start ongoing period
+    // Start ongoing period — mark from start date through today
     var start = parseDate(startStr);
     var today = new Date();
     var days = daysBetween(start, today) + 1;
 
     if (days < 1) { showToast('Start date cannot be in the future'); return; }
-    if (days > 15) { showToast('Start date too far back (max 15 days)'); return; }
+    if (days > 15) { showToast('Start date is too far back (max 15 days). Select a more recent date.'); return; }
 
-    // Mark all days from start to today
     for (var i = 0; i < days; i++) {
       var d = addDays(start, i);
       var ds = formatDate(d);
@@ -1302,17 +1481,15 @@ function savePeriodOrSpotting() {
     renderAll();
     renderPeriodHistory();
     checkOngoing();
-    showToast('Period tracking started (' + days + ' days so far)');
-    document.getElementById('periodStart').value = '';
-    document.getElementById('periodOngoingCheck').checked = false;
-    toggleOngoing();
+    showToast('Period started \u2014 Day ' + days + ' logged');
+    resetPeriodForm();
     return;
   }
 
-  // Completed period — need end date
+  // Completed period: require end date
   var endStr = document.getElementById('periodEnd').value;
-  if (!endStr) { showToast('Please select an end date (or check "ongoing")'); return; }
-  if (endStr < startStr) { showToast('End date must be after start date'); return; }
+  if (!endStr) { showToast('Please enter an end date, or check "Still on my period"'); return; }
+  if (endStr < startStr) { showToast('End date must be on or after start date'); return; }
 
   var start2 = parseDate(startStr);
   var end2 = parseDate(endStr);
@@ -1333,21 +1510,23 @@ function savePeriodOrSpotting() {
   saveData();
   renderAll();
   renderPeriodHistory();
-  showToast('Period logged: ' + days2 + ' days');
-  document.getElementById('periodStart').value = '';
-  document.getElementById('periodEnd').value = '';
+  showToast('Period saved \u2014 ' + days2 + ' days');
+  resetPeriodForm();
 }
 
-// Toggle end date field visibility when "ongoing" is checked
+function resetPeriodForm() {
+  var today = formatDate(new Date());
+  document.getElementById('periodStart').value = today;
+  document.getElementById('periodEnd').value = today;
+  document.getElementById('periodOngoingCheck').checked = false;
+  document.getElementById('periodFlow').value = 'medium';
+  document.getElementById('periodEndField').style.display = '';
+}
+
+// Toggle end date field visibility when "Still on my period" is checked
 function toggleOngoing() {
   var isOngoing = document.getElementById('periodOngoingCheck').checked;
-  var endField = document.getElementById('periodEndField');
-  endField.style.display = isOngoing ? 'none' : '';
-
-  // Uncheck spotting if ongoing is checked
-  if (isOngoing) {
-    document.getElementById('spottingDayCheck').checked = false;
-  }
+  document.getElementById('periodEndField').style.display = isOngoing ? 'none' : '';
 }
 
 // ---- Ongoing period ----
@@ -1368,7 +1547,6 @@ function updateOngoing() {
   var today = formatDate(new Date());
   var flow = document.getElementById('ongoingFlowUpdate').value;
 
-  // Update the ongoing record's flow
   ongoing.flow = flow;
   localStorage.setItem(ONGOING_KEY, JSON.stringify(ongoing));
 
@@ -1381,7 +1559,7 @@ function updateOngoing() {
   saveData();
   renderAll();
   checkOngoing();
-  showToast('Today marked: ' + flow + ' flow');
+  showToast('Today logged: ' + flow.charAt(0).toUpperCase() + flow.slice(1) + ' flow');
 }
 
 function endOngoing() {
@@ -1390,6 +1568,7 @@ function endOngoing() {
 
   var startDate = parseDate(ongoing.start);
   var today = new Date();
+  var days = daysBetween(startDate, today) + 1;
 
   localStorage.removeItem(ONGOING_KEY);
   saveData();
@@ -1397,8 +1576,7 @@ function endOngoing() {
   renderPeriodHistory();
   checkOngoing();
 
-  var days = daysBetween(startDate, today) + 1;
-  showToast('Period ended (' + days + ' days total)');
+  showToast('Period ended \u2014 ' + days + ' days total');
 }
 
 function checkOngoing() {
@@ -1406,13 +1584,15 @@ function checkOngoing() {
   var banner = document.getElementById('ongoingBanner');
   var form = document.getElementById('periodForm');
 
+  if (!banner || !form) return;
+
   if (ongoing) {
     var start = parseDate(ongoing.start);
     var today = new Date();
     var days = daysBetween(start, today) + 1;
 
-    // If ongoing is more than 20 days old, auto-clear it (stale)
-    if (days > 20) {
+    // Auto-clear if stale (more than 15 days old)
+    if (days > 15) {
       localStorage.removeItem(ONGOING_KEY);
       banner.style.display = 'none';
       form.style.display = '';
@@ -1421,8 +1601,9 @@ function checkOngoing() {
 
     banner.style.display = '';
     form.style.display = 'none';
-    document.getElementById('ongoingText').textContent = 'Period ongoing since ' + formatShort(start);
-    document.getElementById('ongoingDays').textContent = 'Day ' + days + ' \u2014 Current flow: ' + ongoing.flow;
+
+    document.getElementById('ongoingText').textContent = 'Period Day ' + days;
+    document.getElementById('ongoingDays').textContent = 'Started ' + formatShort(start) + ' \u2014 ' + (ongoing.flow.charAt(0).toUpperCase() + ongoing.flow.slice(1)) + ' flow';
 
     var sel = document.getElementById('ongoingFlowUpdate');
     if (sel) sel.value = ongoing.flow;
@@ -1433,6 +1614,8 @@ function checkOngoing() {
 }
 
 function forceShowPeriodForm() {
+  // Show the form alongside the banner (for logging past periods)
+  document.getElementById('ongoingBanner').style.display = 'none';
   document.getElementById('periodForm').style.display = '';
 }
 
@@ -1442,7 +1625,6 @@ function renderPeriodHistory() {
   if (!container) return;
   while (container.firstChild) { container.removeChild(container.firstChild); }
 
-  // Find period ranges from entries
   var periods = findPeriodRanges();
   if (periods.length === 0) return;
 
@@ -1451,32 +1633,56 @@ function renderPeriodHistory() {
   title.textContent = 'Period History';
   container.appendChild(title);
 
-  periods.reverse().forEach(function(p) {
+  var flowLabels = { light: 'Light', medium: 'Medium', heavy: 'Heavy', spotting: 'Spotting', none: '' };
+
+  periods.slice().reverse().forEach(function(p) {
     var item = document.createElement('div');
     item.className = 'period-item';
 
-    var dates = document.createElement('span');
+    var left = document.createElement('div');
+    left.className = 'period-item-left';
+
+    var dates = document.createElement('div');
     dates.className = 'period-item-dates';
     dates.textContent = formatShort(parseDate(p.start)) + ' \u2014 ' + formatShort(parseDate(p.end));
-    item.appendChild(dates);
+    left.appendChild(dates);
 
-    var days = document.createElement('span');
-    days.className = 'period-item-days';
-    days.textContent = p.days + ' days';
-    item.appendChild(days);
+    // Collect flows for this range
+    var flowSet = {};
+    var s0 = parseDate(p.start);
+    for (var fi = 0; fi < p.days; fi++) {
+      var fds = formatDate(addDays(s0, fi));
+      var fEntry = data.entries[fds];
+      if (fEntry && fEntry.flow && fEntry.flow !== 'none') {
+        flowSet[fEntry.flow] = true;
+      }
+    }
+    var flowList = Object.keys(flowSet).map(function(f) { return flowLabels[f] || f; }).join(', ');
+    if (flowList) {
+      var meta = document.createElement('div');
+      meta.className = 'period-item-meta';
+      meta.textContent = flowList + ' flow';
+      left.appendChild(meta);
+    }
+
+    item.appendChild(left);
+
+    var daysSpan = document.createElement('div');
+    daysSpan.className = 'period-item-days';
+    daysSpan.textContent = p.days + (p.days === 1 ? ' day' : ' days');
+    item.appendChild(daysSpan);
 
     var removeBtn = document.createElement('button');
     removeBtn.className = 'period-item-remove';
     removeBtn.textContent = 'Remove';
     removeBtn.addEventListener('click', (function(period) {
       return function() {
-        if (!confirm('Remove period flow data for ' + period.start + ' to ' + period.end + '?')) return;
+        if (!confirm('Remove period data for ' + period.start + ' to ' + period.end + '?')) return;
         var s = parseDate(period.start);
         for (var i = 0; i < period.days; i++) {
           var ds = formatDate(addDays(s, i));
           if (data.entries[ds]) {
             data.entries[ds].flow = 'none';
-            // Remove entry entirely if no temp or notes
             if (!data.entries[ds].temp && !data.entries[ds].notes) {
               delete data.entries[ds];
             }
@@ -2024,6 +2230,7 @@ function switchEntryTab(tab) {
   if (tab === 'period') {
     document.getElementById('periodEntry').style.display = '';
     document.querySelectorAll('.tab-btn')[0].classList.add('active');
+    checkOngoing();
     renderPeriodHistory();
   } else if (tab === 'single') {
     document.getElementById('singleEntry').style.display = '';
@@ -2854,8 +3061,11 @@ function clearAllData() {
   if (!confirm('Delete ALL cycle tracking data? This cannot be undone.')) return;
   if (!confirm('Are you absolutely sure?')) return;
   data = { entries: {}, cycles: [] };
+  localStorage.removeItem(ONGOING_KEY);
   saveData();
   renderAll();
+  renderPeriodHistory();
+  checkOngoing();
   showToast('All data cleared');
 }
 
