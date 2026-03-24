@@ -1184,6 +1184,17 @@ let editingDate = null;
 
 // ---- Initialization ----
 function init() {
+  // One-time reset: clear all old stale data (remove this block after March 2026)
+  if (!localStorage.getItem('cycleTracker_v2_reset')) {
+    localStorage.removeItem('cycleTrackerOngoing');
+    localStorage.removeItem('cycleTrackerData');
+    localStorage.removeItem('cycleTrackerSyncPin');
+    localStorage.removeItem('cycleTrackerBinId');
+    localStorage.removeItem('cycleTrackerSkipSync');
+    localStorage.setItem('cycleTracker_v2_reset', '1');
+    data = { entries: {}, cycles: [] };
+  }
+
   var today = new Date();
   var todayStr = formatDate(today);
   document.getElementById('entryDate').value = todayStr;
