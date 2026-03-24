@@ -564,7 +564,152 @@ h1 {
   margin-bottom: 2px;
 }
 
+/* ========== CONCEPTION PLANNER ========== */
+.conception-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
 
+@media (max-width: 640px) {
+  .conception-grid { grid-template-columns: 1fr; }
+}
+
+.conception-box {
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid;
+}
+
+.conception-box.best-days {
+  background: rgba(46, 180, 120, 0.06);
+  border-color: rgba(46, 180, 120, 0.2);
+}
+
+.conception-box.ovulation {
+  background: rgba(107, 84, 204, 0.06);
+  border-color: rgba(107, 84, 204, 0.2);
+}
+
+.conception-box.timing {
+  background: rgba(192, 72, 94, 0.05);
+  border-color: rgba(192, 72, 94, 0.18);
+}
+
+.conception-box.info {
+  background: rgba(90, 180, 220, 0.06);
+  border-color: rgba(90, 180, 220, 0.2);
+}
+
+.conception-box-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 8px;
+}
+
+.conception-box.best-days .conception-box-title { color: #1a6b48; }
+.conception-box.ovulation .conception-box-title { color: #5a44aa; }
+.conception-box.timing .conception-box-title { color: #9c2a42; }
+.conception-box.info .conception-box-title { color: #2a7090; }
+
+.conception-date {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2e5c3e;
+  margin-bottom: 4px;
+}
+
+.conception-detail {
+  font-size: 0.78rem;
+  color: #5a7a64;
+  line-height: 1.5;
+}
+
+.conception-calendar {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.conception-day {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.conception-day.best {
+  background: rgba(46, 180, 120, 0.15);
+  border-color: rgba(46, 180, 120, 0.35);
+  color: #1a6b48;
+}
+
+.conception-day.good {
+  background: rgba(46, 180, 120, 0.08);
+  border-color: rgba(46, 180, 120, 0.2);
+  color: #2e8b6e;
+}
+
+.conception-day.ov {
+  background: rgba(107, 84, 204, 0.15);
+  border-color: rgba(107, 84, 204, 0.35);
+  color: #5a44aa;
+}
+
+.conception-day.low {
+  background: rgba(244, 251, 246, 0.5);
+  color: #7aaa8a;
+}
+
+.conception-day-label {
+  font-size: 0.55rem;
+  font-weight: 500;
+  margin-top: 1px;
+}
+
+/* ========== GLOSSARY ========== */
+.glossary {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(74, 140, 100, 0.12);
+}
+
+.glossary-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #4d7a5e;
+  margin-bottom: 8px;
+}
+
+.glossary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 6px 16px;
+}
+
+.glossary-item {
+  font-size: 0.78rem;
+  color: #5a7a64;
+  line-height: 1.4;
+  padding: 3px 0;
+}
+
+.glossary-item strong {
+  color: #2e5c3e;
+  font-weight: 700;
+}
 
 /* ========== BIG SAVE BUTTON ========== */
 .save-row {
@@ -767,6 +912,12 @@ h1 {
 
   <!-- ====== FERTILITY INSIGHT ====== -->
   <div id="fertilityBanner"></div>
+
+  <!-- ====== CONCEPTION PLANNER ====== -->
+  <div class="card" id="conceptionCard">
+    <div class="card-title">Conception Planner</div>
+    <div id="conceptionContent"></div>
+  </div>
 
   <!-- ====== BBT CHART ====== -->
   <div class="card">
@@ -1439,6 +1590,252 @@ function renderFertilityBanner() {
   container.appendChild(banner);
 }
 
+// ---- Conception Planner ----
+function renderConceptionPlanner() {
+  var container = document.getElementById('conceptionContent');
+  while (container.firstChild) { container.removeChild(container.firstChild); }
+
+  var cycles = data.cycles;
+  if (cycles.length === 0) {
+    var msg = document.createElement('p');
+    msg.style.cssText = 'color:#7aaa8a;font-size:0.85rem';
+    msg.textContent = 'Log at least one period to see conception predictions.';
+    container.appendChild(msg);
+    return;
+  }
+
+  // Calculate cycle stats
+  var completedCycles = cycles.filter(function(c) { return c.endDate !== null; });
+  var avgLen = 28;
+  if (completedCycles.length > 0) {
+    var recent = completedCycles.slice(-6);
+    var lengths = recent.map(function(c) { return daysBetween(parseDate(c.startDate), parseDate(c.endDate)) + 1; });
+    avgLen = Math.round(lengths.reduce(function(s, v) { return s + v; }, 0) / lengths.length);
+  }
+
+  var lastCycle = cycles[cycles.length - 1];
+  var cycleStart = parseDate(lastCycle.startDate);
+  var today = new Date();
+  var currentCD = daysBetween(cycleStart, today) + 1;
+
+  // Ovulation estimate: CD (avgLen - 14)
+  var ovCD = avgLen - 14;
+  var ovDate = addDays(cycleStart, ovCD - 1);
+
+  // Fertile window: 5 days before OV through 1 day after OV
+  var fertileStartDate = addDays(ovDate, -5);
+  var fertileEndDate = addDays(ovDate, 1);
+
+  // Best sex dates: OV-2, OV-1, OV (highest conception rates)
+  var bestDates = [addDays(ovDate, -2), addDays(ovDate, -1), ovDate];
+
+  // Good dates: OV-5 through OV+1 (excluding best)
+  var bestStrs = bestDates.map(function(d) { return formatDate(d); });
+
+  // Days until ovulation
+  var daysToOV = daysBetween(today, ovDate);
+
+  // Next period estimate
+  var nextPeriod = addDays(cycleStart, avgLen);
+  var daysToNextPeriod = daysBetween(today, nextPeriod);
+
+  // --- Build the grid ---
+  var grid = document.createElement('div');
+  grid.className = 'conception-grid';
+
+  // Best Days for Sex box
+  var bestBox = document.createElement('div');
+  bestBox.className = 'conception-box best-days';
+  var bestTitle = document.createElement('div');
+  bestTitle.className = 'conception-box-title';
+  bestTitle.textContent = 'Best Days for Intercourse';
+  bestBox.appendChild(bestTitle);
+
+  bestDates.forEach(function(d, i) {
+    var dateEl = document.createElement('div');
+    dateEl.className = 'conception-date';
+    var cd = daysBetween(cycleStart, d) + 1;
+    var labels = ['2 days before OV', '1 day before OV (Peak)', 'Ovulation Day'];
+    dateEl.textContent = formatShort(d) + ' (CD ' + cd + ')';
+    bestBox.appendChild(dateEl);
+    var detail = document.createElement('div');
+    detail.className = 'conception-detail';
+    detail.textContent = labels[i];
+    bestBox.appendChild(detail);
+  });
+
+  if (daysToOV > 0) {
+    var countdown = document.createElement('div');
+    countdown.className = 'conception-detail';
+    countdown.style.marginTop = '8px';
+    countdown.style.fontWeight = '600';
+    countdown.style.color = '#1a6b48';
+    countdown.textContent = daysToOV + ' days until estimated ovulation';
+    bestBox.appendChild(countdown);
+  } else if (daysToOV >= -1) {
+    var nowMsg = document.createElement('div');
+    nowMsg.className = 'conception-detail';
+    nowMsg.style.marginTop = '8px';
+    nowMsg.style.fontWeight = '700';
+    nowMsg.style.color = '#1a6b48';
+    nowMsg.textContent = 'Ovulation is TODAY or very recent — highest fertility!';
+    bestBox.appendChild(nowMsg);
+  } else {
+    var passedMsg = document.createElement('div');
+    passedMsg.className = 'conception-detail';
+    passedMsg.style.marginTop = '8px';
+    passedMsg.style.color = '#b08020';
+    passedMsg.textContent = 'Estimated OV has passed. Fertile window likely closed for this cycle.';
+    bestBox.appendChild(passedMsg);
+  }
+  grid.appendChild(bestBox);
+
+  // Ovulation & Cycle Info box
+  var ovBox = document.createElement('div');
+  ovBox.className = 'conception-box ovulation';
+  var ovTitle = document.createElement('div');
+  ovTitle.className = 'conception-box-title';
+  ovTitle.textContent = 'Cycle Overview';
+  ovBox.appendChild(ovTitle);
+
+  var infoLines = [
+    ['Current Cycle Day (CD)', 'CD ' + currentCD],
+    ['Estimated Ovulation (OV)', formatShort(ovDate) + ' (CD ' + ovCD + ')'],
+    ['Fertile Window (FW)', formatShort(fertileStartDate) + ' \u2014 ' + formatShort(fertileEndDate)],
+    ['Average Cycle Length', avgLen + ' days'],
+    ['Luteal Phase (LP)', (avgLen - ovCD) + ' days (CD ' + (ovCD + 1) + ' \u2014 CD ' + avgLen + ')'],
+    ['Next Period (est.)', formatShort(nextPeriod) + (daysToNextPeriod > 0 ? ' (' + daysToNextPeriod + ' days)' : '')],
+  ];
+
+  infoLines.forEach(function(item) {
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(107,84,204,0.08)';
+    var label = document.createElement('span');
+    label.className = 'conception-detail';
+    label.textContent = item[0];
+    var val = document.createElement('span');
+    val.style.cssText = 'font-size:0.82rem;font-weight:700;color:#2e5c3e';
+    val.textContent = item[1];
+    row.appendChild(label);
+    row.appendChild(val);
+    ovBox.appendChild(row);
+  });
+  grid.appendChild(ovBox);
+  container.appendChild(grid);
+
+  // Fertile window visual calendar
+  var calTitle = document.createElement('div');
+  calTitle.style.cssText = 'font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#4d7a5e;margin-bottom:8px';
+  calTitle.textContent = 'Fertility Calendar (Current Cycle)';
+  container.appendChild(calTitle);
+
+  var calRow = document.createElement('div');
+  calRow.className = 'conception-calendar';
+
+  // Show CD (ovCD - 7) through CD (ovCD + 5) for context
+  var showStart = Math.max(1, ovCD - 7);
+  var showEnd = Math.min(avgLen, ovCD + 5);
+
+  for (var cd = showStart; cd <= showEnd; cd++) {
+    var dayDate = addDays(cycleStart, cd - 1);
+    var dayStr = formatDate(dayDate);
+    var dayEl = document.createElement('div');
+    dayEl.className = 'conception-day';
+
+    if (bestStrs.indexOf(dayStr) >= 0) {
+      dayEl.classList.add(dayStr === formatDate(ovDate) ? 'ov' : 'best');
+    } else if (dayStr >= formatDate(fertileStartDate) && dayStr <= formatDate(fertileEndDate)) {
+      dayEl.classList.add('good');
+    } else {
+      dayEl.classList.add('low');
+    }
+
+    // Highlight today
+    if (dayStr === formatDate(today)) {
+      dayEl.style.boxShadow = '0 0 0 2px #2e5c3e';
+    }
+
+    var dayNum = document.createElement('div');
+    dayNum.textContent = dayDate.getDate();
+    dayEl.appendChild(dayNum);
+
+    var dayLabel = document.createElement('div');
+    dayLabel.className = 'conception-day-label';
+    dayLabel.textContent = 'CD' + cd;
+    dayEl.appendChild(dayLabel);
+
+    calRow.appendChild(dayEl);
+  }
+  container.appendChild(calRow);
+
+  // Legend for calendar
+  var legRow = document.createElement('div');
+  legRow.style.cssText = 'display:flex;gap:14px;margin-top:8px;flex-wrap:wrap';
+  var legs = [
+    ['rgba(46,180,120,0.15)', 'Best Days (Highest Chance)'],
+    ['rgba(46,180,120,0.08)', 'Fertile (Good Chance)'],
+    ['rgba(107,84,204,0.15)', 'Ovulation Day'],
+    ['rgba(244,251,246,0.5)', 'Low Fertility']
+  ];
+  legs.forEach(function(l) {
+    var item = document.createElement('div');
+    item.style.cssText = 'display:flex;align-items:center;gap:5px;font-size:0.72rem;color:#5a7a64';
+    var swatch = document.createElement('span');
+    swatch.style.cssText = 'width:12px;height:12px;border-radius:4px;background:' + l[0] + ';border:1px solid rgba(74,140,100,0.15)';
+    item.appendChild(swatch);
+    var txt = document.createElement('span');
+    txt.textContent = l[1];
+    item.appendChild(txt);
+    legRow.appendChild(item);
+  });
+  container.appendChild(legRow);
+
+  // Glossary
+  var glossary = document.createElement('div');
+  glossary.className = 'glossary';
+
+  var gTitle = document.createElement('div');
+  gTitle.className = 'glossary-title';
+  gTitle.textContent = 'Glossary of Terms';
+  glossary.appendChild(gTitle);
+
+  var gGrid = document.createElement('div');
+  gGrid.className = 'glossary-grid';
+
+  var terms = [
+    ['CD', 'Cycle Day \u2014 Day count from first day of period (CD 1 = first bleed day)'],
+    ['OV', 'Ovulation \u2014 When the ovary releases an egg (usually CD 12\u201316)'],
+    ['FW', 'Fertile Window \u2014 ~6 days when pregnancy is possible (5 days before OV + OV day)'],
+    ['LP', 'Luteal Phase \u2014 Days between ovulation and next period (typically 10\u201316 days)'],
+    ['BBT', 'Basal Body Temperature \u2014 Resting temp taken first thing in the morning'],
+    ['DPO', 'Days Past Ovulation \u2014 Count from ovulation day (e.g. 14 DPO = period or positive test)'],
+    ['TWW', 'Two Week Wait \u2014 The ~14 days between OV and expected period / pregnancy test'],
+    ['BFP', 'Big Fat Positive \u2014 Positive pregnancy test'],
+    ['BFN', 'Big Fat Negative \u2014 Negative pregnancy test'],
+    ['AF', 'Aunt Flo \u2014 Slang for period/menstruation'],
+    ['CM', 'Cervical Mucus \u2014 EWCM (Egg White CM) signals peak fertility'],
+    ['BD', 'Baby Dance \u2014 Intercourse timed for conception'],
+    ['Coverline', 'Horizontal line on BBT chart separating pre-OV (lower) and post-OV (higher) temps'],
+    ['Biphasic', 'Two-phase BBT pattern \u2014 lower temps before OV, higher after (confirms OV happened)'],
+    ['Implantation', 'Embryo attaches to uterus \u2014 ~6\u201312 DPO, may cause light spotting or temp dip'],
+    ['Anovulatory', 'A cycle where no ovulation occurs \u2014 no BBT shift, no biphasic pattern'],
+  ];
+
+  terms.forEach(function(t) {
+    var item = document.createElement('div');
+    item.className = 'glossary-item';
+    var abbr = document.createElement('strong');
+    abbr.textContent = t[0] + ': ';
+    item.appendChild(abbr);
+    var desc = document.createTextNode(t[1]);
+    item.appendChild(desc);
+    gGrid.appendChild(item);
+  });
+
+  glossary.appendChild(gGrid);
+  container.appendChild(glossary);
+}
+
 // ---- Entry tabs ----
 function switchEntryTab(tab) {
   document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
@@ -1981,13 +2378,13 @@ function renderCalendar() {
       cell.classList.add('ovulation-day');
       var fertLabel = document.createElement('div');
       fertLabel.className = 'cal-fertile';
-      fertLabel.textContent = 'OV';
+      fertLabel.textContent = 'Ovulation';
       cell.appendChild(fertLabel);
     } else if (fertileStatus === 'fertile') {
       cell.classList.add('fertile-day');
       var fertLabel2 = document.createElement('div');
       fertLabel2.className = 'cal-fertile';
-      fertLabel2.textContent = 'fertile';
+      fertLabel2.textContent = 'Fertile';
       cell.appendChild(fertLabel2);
     }
 
@@ -2230,6 +2627,7 @@ function showToast(msg) {
 // ---- Render all views ----
 function renderAll() {
   renderFertilityBanner();
+  renderConceptionPlanner();
   renderChart();
   renderCalendar();
   renderStats();

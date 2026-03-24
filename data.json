@@ -117,33 +117,42 @@
     },
     "2026-03-19": {
       "temp": 95.5,
-      "flow": "none",
+      "flow": "light",
       "notes": ""
     },
     "2026-03-20": {
       "temp": 96,
-      "flow": "none",
+      "flow": "light",
       "notes": ""
     },
     "2026-03-21": {
       "temp": 95.9,
-      "flow": "none",
+      "flow": "light",
       "notes": ""
     },
     "2026-03-22": {
       "temp": 96.8,
-      "flow": "none",
+      "flow": "light",
       "notes": ""
     },
     "2026-03-23": {
       "temp": 96.8,
-      "flow": "none",
+      "flow": "light",
+      "notes": ""
+    },
+    "2026-03-24": {
+      "temp": null,
+      "flow": "light",
       "notes": ""
     }
   },
   "cycles": [
     {
       "startDate": "2026-02-24",
+      "endDate": "2026-03-18"
+    },
+    {
+      "startDate": "2026-03-19",
       "endDate": null
     }
   ]
