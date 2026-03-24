@@ -831,6 +831,7 @@ h1 {
           <button class="btn btn-danger" onclick="endOngoing()" style="align-self:flex-end">Period Ended</button>
         </div>
         <div style="font-size:0.78rem;color:#7aaa8a">Tap "Mark Today" each day to log flow. Tap "Period Ended" when it stops.</div>
+        <button class="btn btn-sm btn-secondary" onclick="forceShowPeriodForm()" style="margin-top:8px">Log a different period</button>
       </div>
 
       <!-- Period entry form -->
@@ -1033,6 +1034,8 @@ let editingDate = null;
 function init() {
   const today = new Date();
   document.getElementById('entryDate').value = formatDate(today);
+  document.getElementById('periodStart').value = formatDate(today);
+  document.getElementById('periodEnd').value = formatDate(today);
   calYear = today.getFullYear();
   calMonth = today.getMonth();
 
@@ -1408,18 +1411,29 @@ function checkOngoing() {
     var today = new Date();
     var days = daysBetween(start, today) + 1;
 
+    // If ongoing is more than 20 days old, auto-clear it (stale)
+    if (days > 20) {
+      localStorage.removeItem(ONGOING_KEY);
+      banner.style.display = 'none';
+      form.style.display = '';
+      return;
+    }
+
     banner.style.display = '';
     form.style.display = 'none';
     document.getElementById('ongoingText').textContent = 'Period ongoing since ' + formatShort(start);
     document.getElementById('ongoingDays').textContent = 'Day ' + days + ' \u2014 Current flow: ' + ongoing.flow;
 
-    // Set the flow dropdown to current
     var sel = document.getElementById('ongoingFlowUpdate');
     if (sel) sel.value = ongoing.flow;
   } else {
     banner.style.display = 'none';
     form.style.display = '';
   }
+}
+
+function forceShowPeriodForm() {
+  document.getElementById('periodForm').style.display = '';
 }
 
 // ---- Render period history ----
