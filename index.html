@@ -564,101 +564,7 @@ h1 {
   margin-bottom: 2px;
 }
 
-/* ========== SYNC ========== */
-#syncConnected {
-  padding: 12px 0 4px;
-}
 
-#syncLabel {
-  background: rgba(58, 158, 116, 0.1);
-  padding: 4px 12px;
-  border-radius: 8px;
-  font-size: 0.82rem;
-}
-
-/* ========== WELCOME OVERLAY ========== */
-#welcomeOverlay {
-  position: fixed;
-  inset: 0;
-  background: linear-gradient(150deg, #edf7f0 0%, #e0f2e9 40%, #dceef4 100%);
-  z-index: 300;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-}
-
-.welcome-box {
-  background: rgba(255,255,255,0.9);
-  border-radius: 24px;
-  padding: 40px 32px;
-  max-width: 400px;
-  width: 100%;
-  text-align: center;
-  box-shadow: 0 8px 40px rgba(40,90,60,0.12);
-  border: 1px solid rgba(74,140,100,0.14);
-}
-
-.welcome-box h2 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #2e5c3e;
-  margin-bottom: 8px;
-}
-
-.welcome-box p {
-  color: #5a7a64;
-  font-size: 0.9rem;
-  margin-bottom: 24px;
-  line-height: 1.6;
-}
-
-.welcome-box .field {
-  text-align: left;
-  margin-bottom: 16px;
-}
-
-.welcome-box .field input {
-  width: 100%;
-  padding: 14px 16px;
-  font-size: 1.1rem;
-  text-align: center;
-  letter-spacing: 2px;
-  background: #f4fbf6;
-  border: 2px solid rgba(74,140,100,0.25);
-  border-radius: 14px;
-  color: #1e2d24;
-  font-family: inherit;
-  font-weight: 600;
-  outline: none;
-}
-
-.welcome-box .field input:focus {
-  border-color: #3a9e74;
-  box-shadow: 0 0 0 4px rgba(58,158,116,0.12);
-}
-
-.welcome-box .btn {
-  width: 100%;
-  padding: 14px;
-  font-size: 1rem;
-  border-radius: 14px;
-  margin-bottom: 10px;
-}
-
-.welcome-skip {
-  background: none;
-  border: none;
-  color: #7aaa8a;
-  font-size: 0.82rem;
-  cursor: pointer;
-  font-family: inherit;
-  padding: 8px;
-}
-
-.welcome-skip:hover {
-  color: #4d7a5e;
-}
 
 /* ========== BIG SAVE BUTTON ========== */
 .save-row {
@@ -699,49 +605,11 @@ h1 {
 </head>
 <body>
 
-<!-- ====== WELCOME OVERLAY (first visit) ====== -->
-<div id="welcomeOverlay">
-  <div class="welcome-box">
-    <h2>Cycle & BBT Tracker</h2>
-    <p>Enter a PIN to save your data to the cloud. Use the same PIN on any device to access your data.</p>
-    <div class="field">
-      <label>Choose a PIN</label>
-      <input type="text" id="welcomePin" placeholder="e.g. mypin2026" autocomplete="off" />
-    </div>
-    <button class="btn btn-primary" onclick="welcomeConnect()">Save & Start</button>
-    <button class="welcome-skip" onclick="welcomeSkip()">Skip — use without cloud sync</button>
-  </div>
-</div>
-
 <div class="app-container">
 
   <!-- Header -->
   <h1>Cycle & BBT Tracker</h1>
   <p class="subtitle">Track your basal body temperature & menstrual cycle</p>
-
-  <!-- ====== CLOUD SYNC (top of page) ====== -->
-  <div class="card" id="syncCard">
-    <div class="card-title">Cloud Sync</div>
-    <div id="syncSetup">
-      <p style="font-size:0.85rem;color:#5a7a64;margin-bottom:12px">Enter a PIN to save & sync your data across devices. Use the same PIN on every device.</p>
-      <div class="entry-row">
-        <div class="field" style="flex:1;max-width:260px">
-          <label>Your PIN</label>
-          <input type="text" id="syncPin" placeholder="e.g. mypin2026" autocomplete="off" />
-        </div>
-        <button class="btn btn-primary" onclick="connectSync()" style="align-self:flex-end">Connect</button>
-      </div>
-    </div>
-    <div id="syncConnected" style="display:none">
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span id="syncLabel" style="font-size:0.85rem;color:#2e5c3e;font-weight:600"></span>
-        <button class="btn btn-sm btn-secondary" onclick="cloudPull()">Pull from Cloud</button>
-        <button class="btn btn-sm btn-primary" onclick="cloudPush()">Push to Cloud</button>
-        <button class="btn btn-sm btn-danger" onclick="disconnectSync()">Disconnect</button>
-      </div>
-      <p style="font-size:0.75rem;color:#7aaa8a;margin-top:8px">Auto-syncs on every save. Tap "Pull" on a new device to load your data.</p>
-    </div>
-  </div>
 
   <!-- ====== DATA ENTRY ====== -->
   <div class="card">
@@ -945,34 +813,10 @@ function init() {
   calYear = today.getFullYear();
   calMonth = today.getMonth();
 
-  // Show/hide welcome overlay
-  var pin = getSyncPin();
-  var skipped = localStorage.getItem('cycleTrackerSkipSync');
-  if (pin || skipped) {
-    document.getElementById('welcomeOverlay').style.display = 'none';
-  }
-
-  initSync();
   renderPeriodHistory();
   renderAll();
 }
 
-// ---- Welcome overlay ----
-function welcomeConnect() {
-  var pin = document.getElementById('welcomePin').value.trim();
-  if (!pin || pin.length < 4) {
-    showToast('PIN must be at least 4 characters');
-    return;
-  }
-  document.getElementById('syncPin').value = pin;
-  document.getElementById('welcomeOverlay').style.display = 'none';
-  connectSync();
-}
-
-function welcomeSkip() {
-  localStorage.setItem('cycleTrackerSkipSync', '1');
-  document.getElementById('welcomeOverlay').style.display = 'none';
-}
 
 // ---- Data persistence ----
 function loadData() {
@@ -989,10 +833,6 @@ function loadData() {
 function saveData() {
   detectCycles();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  // Auto-push to cloud if connected
-  if (getSyncPin()) {
-    cloudPush(true); // silent push
-  }
 }
 
 // ---- Date helpers ----
@@ -2129,133 +1969,6 @@ function clearAllData() {
   saveData();
   renderAll();
   showToast('All data cleared');
-}
-
-// ---- Cloud Sync (jsonblob.com — free, no API key, no signup) ----
-var SYNC_PIN_KEY = 'cycleTrackerSyncPin';
-var SYNC_BIN_KEY = 'cycleTrackerBinId';
-var JSONBLOB_API = 'https://jsonblob.com/api/jsonBlob';
-
-function getSyncPin() {
-  return localStorage.getItem(SYNC_PIN_KEY);
-}
-
-function getSyncBinId() {
-  return localStorage.getItem(SYNC_BIN_KEY);
-}
-
-function initSync() {
-  var pin = getSyncPin();
-  var binId = getSyncBinId();
-  if (pin && binId) {
-    document.getElementById('syncSetup').style.display = 'none';
-    document.getElementById('syncConnected').style.display = '';
-    document.getElementById('syncLabel').textContent = 'Connected (PIN: ' + pin.substring(0, 3) + '...)';
-  }
-}
-
-function connectSync() {
-  var pin = document.getElementById('syncPin').value.trim();
-  if (!pin || pin.length < 4) {
-    showToast('PIN must be at least 4 characters');
-    return;
-  }
-
-  showToast('Connecting...');
-
-  // Check if we have a saved blob ID for this PIN
-  var savedBin = localStorage.getItem('syncMap_' + pin);
-  if (savedBin) {
-    localStorage.setItem(SYNC_PIN_KEY, pin);
-    localStorage.setItem(SYNC_BIN_KEY, savedBin);
-    initSync();
-    cloudPull();
-    return;
-  }
-
-  // Create new blob on jsonblob.com
-  fetch(JSONBLOB_API, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-    body: JSON.stringify({ entries: data.entries, updated: new Date().toISOString() })
-  }).then(function(resp) {
-    if (resp.ok) {
-      // Blob ID is in the Location header or x-jsonblob-id
-      var blobId = resp.headers.get('x-jsonblob-id');
-      if (!blobId) {
-        var loc = resp.headers.get('Location') || '';
-        blobId = loc.split('/').pop();
-      }
-      if (blobId) {
-        localStorage.setItem(SYNC_PIN_KEY, pin);
-        localStorage.setItem(SYNC_BIN_KEY, blobId);
-        localStorage.setItem('syncMap_' + pin, blobId);
-        initSync();
-        showToast('Connected! Data saved to cloud.');
-      } else {
-        showToast('Connection failed — no blob ID returned.');
-      }
-    } else {
-      showToast('Connection failed (' + resp.status + ')');
-    }
-  }).catch(function(err) {
-    showToast('Connection failed — check internet.');
-  });
-}
-
-function cloudPush(silent) {
-  var binId = getSyncBinId();
-  if (!binId) return;
-
-  fetch(JSONBLOB_API + '/' + binId, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-    body: JSON.stringify({ entries: data.entries, updated: new Date().toISOString() })
-  }).then(function(resp) {
-    if (resp.ok) {
-      if (!silent) showToast('Data saved to cloud');
-    } else if (!silent) {
-      showToast('Save failed (' + resp.status + ')');
-    }
-  }).catch(function() {
-    if (!silent) showToast('Save failed — check internet');
-  });
-}
-
-function cloudPull() {
-  var binId = getSyncBinId();
-  if (!binId) { showToast('Not connected'); return; }
-
-  showToast('Loading data...');
-  fetch(JSONBLOB_API + '/' + binId, {
-    headers: { 'Accept': 'application/json' }
-  }).then(function(resp) {
-    if (resp.ok) return resp.json();
-    throw new Error('Status ' + resp.status);
-  }).then(function(cloudData) {
-    if (cloudData && cloudData.entries) {
-      Object.keys(cloudData.entries).forEach(function(key) {
-        data.entries[key] = cloudData.entries[key];
-      });
-      detectCycles();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      renderPeriodHistory();
-      renderAll();
-      showToast('Loaded ' + Object.keys(cloudData.entries).length + ' entries');
-    } else {
-      showToast('No data in cloud yet');
-    }
-  }).catch(function(err) {
-    showToast('Load failed — ' + err.message);
-  });
-}
-
-function disconnectSync() {
-  localStorage.removeItem(SYNC_PIN_KEY);
-  document.getElementById('syncSetup').style.display = '';
-  document.getElementById('syncConnected').style.display = 'none';
-  document.getElementById('syncPin').value = '';
-  showToast('Disconnected');
 }
 
 // ---- Toast notifications ----
